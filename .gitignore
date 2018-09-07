@@ -1,3 +1,6 @@
-./auth/*
-./node_modules/*
-./cache/dndCache.json
+/auth/*
+/node_modules/*
+/cache/dndCache.json
+/repo/*
+/icons/*
+/package-lock.json
