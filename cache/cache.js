@@ -43,6 +43,8 @@ module.exports = {
 					"\nNon-Kosher Commands:\n\t"+
 						"[[honk]]\n\t\t"+
 							"-Honk Honk.\n\t"+
+						"[[everyfuckingtime]]\n\t\t"+
+							"-Oh no.\n\t"+
 						"[[domt]]\n\t\t"+
 							"-Draws a random card from the Deck of Many Things.\n\t"+
 						"[[tarotcard]]\n\t\t"+

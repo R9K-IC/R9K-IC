@@ -23,10 +23,10 @@ try {
 try {
 	var wolfram = require('wolfram-alpha').createClient("H9GWLU-HK2G84W5A7");
 	
-	wolfram.query("integrate 2x", function(e, result) {
-		if(e){ throw e; }
+	wolfram.query("integrate 2x", function(_e, result) {
+		if(_e){ throw _e; }
 		console.log("Result: " + result);
-	})
+	});
 } catch (e){
 	console.log("No Wolfram Alpha Connection."+e.stack);
 }

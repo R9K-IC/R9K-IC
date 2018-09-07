@@ -53,6 +53,40 @@ module.exports = {
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⠁⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⡼⡾⢀⢀⣼⠓⠢⠦⠤⠤⠠⢀⠰⠊⠁⠊⢀⠡⠾⠋⢀⢀⠇";
 			}
 		},
+		"everyfuckingtime": {
+			desc: "-Oh no.",
+			properties: {
+				spam: YES,
+				pingsUser: NO
+			},
+			func: function(user, userID, channelID, message) {
+				return 	"```\n"+
+						"                E V E R Y F U C K I N G T I M E\n"+
+						"              / V                           / V\n"+
+						"            /   E                         /   E\n"+
+						"          /     R                       /     R\n"+
+						"        /       Y                     /       Y\n"+
+						"      /         F                   /         F\n"+
+						"    /           U                 /           U\n"+
+						"  /             C               /             C\n"+
+						"E V E R Y F U C K I N G T I M E               K\n"+
+						"V               I             V               I\n"+
+						"E               N             E               N\n"+
+						"R               G             R               G\n"+
+						"Y               T             Y               T\n"+
+						"F               I             F               I\n"+
+						"U               M             U               M\n"+
+						"C               E V E R Y F U C K I N G T I M E\n"+
+						"K             /               K             /\n"+
+						"I           /                 I           /\n"+
+						"N         /                   N         /\n"+
+						"G       /                     G       /\n"+
+						"T     /                       T     /\n"+
+						"I   /                         I   /\n"+
+						"M /                           M /\n"+
+						"E V E R Y F U C K I N G T I M E\n```";
+			}
+		},
 		"domt": {
 			desc: "-Draws a random card from the Deck of Many Things.",
 			properties: {
