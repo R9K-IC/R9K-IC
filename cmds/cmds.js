@@ -319,7 +319,7 @@ module.exports = {
 				return this.infoResponse.content;
 			},
 			infoResponse: {
-				content: "```\nr9k-ic bot by Archaic.\nLast Updated: 09-06-2018\nver. 1.07\n```"
+				content: "```\nr9k-ic bot by Archaic.\nLast Updated: 09-06-2018\nver. 1.10\n```"
 			}
 		},
 		"changelog":{
@@ -329,7 +329,14 @@ module.exports = {
 				pingsUser: NO
 			},
 			func: function(user, userID, channelID, message){
-				return changelogResponse.content;
+				return this.changelogResponse.content;
+			},
+			changelogResponse: {
+				content: "```\nver. 1.04:\t01-12-2017\n\tDice probabilities. ([[8d6>?30]])\n" +
+							"\nver. 1.05:\t01-18-2017\n\tCrab Feeder. ([[3d10f1s4]])\n" +
+							"\nver. 1.06:\t01-24-2017\n\tMonster Lookup. (Ancient Red Dragon)\n" +
+							"\nver. 1.10:\t09-06-2018\n\tRemove legacy commands & refactor.\n" +
+							"```"
 			}
 		}
 	},

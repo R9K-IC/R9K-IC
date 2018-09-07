@@ -4,14 +4,6 @@ var util = require('./util/util');
 var commands = require('./cmds/cmds');
 var cache = require('./cache/cache');
 
-var changelogResponse = {
-	content: "```\nver. 1.04:\t01-12-2017\n\tDice probabilities. ([[8d6>?30]])\n" +
-				"\nver. 1.05:\t01-18-2017\n\tCrab Feeder. ([[3d10f1s4]])\n" +
-				"\nver. 1.06:\t01-24-2017\n\tMonster Lookup. (Ancient Red Dragon)\n" +
-				"\nver. 1.07:\t09-06-2018\n\tRemove legacy commands & refactor.\n" +
-				"```"
-}
-
 // Get DnD data.
 // Thanks, https://www.reddit.com/r/DnD/comments/33i1hd/5e_spell_reference_mobile_app/cqocaf8/ for the spells list.
 // Thanks, https://github.com/Buluphont/Spellbot for the monster list.
@@ -31,11 +23,9 @@ try {
 try {
 	var wolfram = require('wolfram-alpha').createClient("H9GWLU-HK2G84W5A7");
 	
-	//var results = yield wolfram.query("integrate 2x");
-	//console.log("Result: " + results);
-	wolfram.query("integrate 2x", function(err, result) {
-	  if(err) throw err
-	  console.log("Result: " + result)
+	wolfram.query("integrate 2x", function(e, result) {
+		if(e){ throw e; }
+		console.log("Result: " + result);
 	})
 } catch (e){
 	console.log("No Wolfram Alpha Connection."+e.stack);
