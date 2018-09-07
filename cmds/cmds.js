@@ -53,8 +53,17 @@ module.exports = {
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⠁⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⡼⡾⢀⢀⣼⠓⠢⠦⠤⠤⠠⢀⠰⠊⠁⠊⢀⠡⠾⠋⢀⢀⠇";
 			}
 		},
-		"deckofmanythings": domt,
-		"domt": domt,
+		"domt": {
+			desc: "-Draws a random card from the Deck of Many Things.",
+			properties: {
+				spam: YES,
+				pingsUser: YES
+			},
+			func: function(user, userID, channelID, message) {
+				card = Math.floor(Math.random() * 22);
+				return "You drew " + util.getDNDCardName(card) + "." + "\n" + cache.domtCache[util.getDNDCardName(card).toLowerCase()];
+			}
+		},
 		"domtlist": {
 			desc: "-Shows all possible cards from the Deck of Many Things.",
 			properties: {
@@ -307,7 +316,10 @@ module.exports = {
 				pingsUser: NO
 			},
 			func: function(user, userID, channelID, message){
-				return infoResponse.content;
+				return this.infoResponse.content;
+			},
+			infoResponse: {
+				content: "```\nr9k-ic bot by Archaic.\nLast Updated: 09-06-2018\nver. 1.07\n```"
 			}
 		},
 		"changelog":{
@@ -446,16 +458,3 @@ module.exports = {
 				util.splitMessage(res4, {prepend: "```", append: "```"}));
 	}
 };
-
-/* Repeats to save space. */
-var domt = {
-	desc: "-Draws a random card from the Deck of Many Things.",
-	properties: {
-		spam: YES,
-			pingsUser: YES
-	},
-	func: function(user, userID, channelID, message) {
-		card = Math.floor(Math.random() * 22);
-		return "You drew " + util.getDNDCardName(card) + "." + "\n" + cache.domtCache[util.getDNDCardName(card).toLowerCase()];
-	}
-}

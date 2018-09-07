@@ -4,10 +4,6 @@ var util = require('./util/util');
 var commands = require('./cmds/cmds');
 var cache = require('./cache/cache');
 
-var infoResponse = {
-	content: "```\nr9k-ic bot by Archaic.\nLast Updated: 09-06-2018\nver. 1.07\n```"
-}
-
 var changelogResponse = {
 	content: "```\nver. 1.04:\t01-12-2017\n\tDice probabilities. ([[8d6>?30]])\n" +
 				"\nver. 1.05:\t01-18-2017\n\tCrab Feeder. ([[3d10f1s4]])\n" +
