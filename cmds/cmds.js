@@ -5,6 +5,10 @@ var NO_RESPONSE = "NO_RESPONSE";
 
 var util = require('../util/util');
 var cache = require('../cache/cache');
+var icon = require("../repo/icon.json");
+var auth = require("../auth/auth.json");
+
+var request = require('request');
 
 module.exports = {
 	/* PM Cache for messages meant to be in DMChannels */
@@ -13,22 +17,83 @@ module.exports = {
 			desc: "-Shows all available commands & usage.",
 			properties: {
 				spam: NO,
-				pingsUser: NO
+				pingsUser: NO,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				return cache.helpResponse.content;
 			}
 		}
 	},
 	/* Response Cache as a catch-all for commands in brackets. */
 	functionResponseCache: {
+		
+		"fflogsranks": {
+			desc: "-TODO.",
+			properties: {
+				spam: NO,
+				pingsUser: NO,
+				embed: YES
+			},
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
+				console.log("1: "+cmds + "0: " + cmds[0]);
+				console.log(this.constructRequestURL(cmds[1], cmds[2], "na"));
+				request(this.constructRequestURL(cmds[1], cmds[2], "na"), { json: true }, (err, res, body) => {
+					try{
+						if(err) { return console.log(err); }
+						if(body.status){ throw "help"; }
+						var res = this.constructEmbed(body);
+						callback(channelID, res);
+					} catch(e){
+						callback(channelID, { color: 3447003, title: "TODO" });
+					}
+				});
+			},
+			fflogsKey: '?api_key='+auth.fflogsAPItoken,
+			historical: '&timeframe=historical',
+			fflogsBase: 'https://www.fflogs.com:443/v1/',
+			constructRequestURL: function(character, server, region){
+				var res = this.fflogsBase;
+				res += 'rankings/character/';
+				res += character + '/';
+				res += server + '/';
+				res += region;
+				res += this.fflogsKey + '&';
+				res += this.historical;
+
+				return res;
+			},
+			constructEmbed: function(message){
+				var res = {
+					color: 3447003,
+					title: message[0].characterName,
+					url: "http://fflogs.com/character/na/" + message[0].server + "/" + message[0].characterName.replace(" ", "%20"),
+					fields: [],
+					timestamp: new Date()
+				}
+				console.log(res);
+
+				var fight;
+				
+				for(var i = 0; i < message.length; i++){
+					fight = message[i];
+					res.fields.push({
+						name: fight.encounterName + ", " + fight.spec,
+						value: parseFloat((100 - (fight.rank / fight.outOf * 100)).toFixed(2)) + "% " +  fight.total + " DPS"
+					});
+				}
+				
+				return res;
+			}
+		},
 		"honk": {
 			desc: "-Honk Honk.",
 			properties: {
 				spam: YES,
-				pingsUser: NO
+				pingsUser: NO,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				return 	".\n"+
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢰⣶⣶⢀⣴⣄\n"+
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢸⣿⣿⣿⠟⠋\n"+
@@ -57,9 +122,10 @@ module.exports = {
 			desc: "-Oh no.",
 			properties: {
 				spam: YES,
-				pingsUser: NO
+				pingsUser: NO,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				return 	"```\n"+
 						"                E V E R Y F U C K I N G T I M E\n"+
 						"              / V                           / V\n"+
@@ -91,9 +157,10 @@ module.exports = {
 			desc: "-Draws a random card from the Deck of Many Things.",
 			properties: {
 				spam: YES,
-				pingsUser: YES
+				pingsUser: YES,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				card = Math.floor(Math.random() * 22);
 				return "You drew " + util.getDNDCardName(card) + "." + "\n" + cache.domtCache[util.getDNDCardName(card).toLowerCase()];
 			}
@@ -102,9 +169,10 @@ module.exports = {
 			desc: "-Shows all possible cards from the Deck of Many Things.",
 			properties: {
 				spam: NO,
-				pingsUser: NO
+				pingsUser: NO,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				return "Vizier, Sun, Moon, Star, Comet, The Fates, Throne, Key, Knight, Gem, Talons, The Void, Flames, Skull, Idiot, Donjon, Ruin, Euryale, Rogue, Balance, Fool, Jester";
 			}
 		},
@@ -112,9 +180,10 @@ module.exports = {
 			desc: "-Draws a random tarot card.",
 			properties: {
 				spam: YES,
-				pingsUser: YES
+				pingsUser: YES,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				return "You drew " + this.getTarotCardName(Math.floor(Math.random() * 22)) + ".";
 			},
 			tarotCache: {
@@ -150,9 +219,10 @@ module.exports = {
 			desc: "-Draws a random card.",
 			properties: {
 				spam: YES,
-				pingsUser: YES
+				pingsUser: YES,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				card = Math.floor(Math.random() * this.deckSize);
 				return "You drew a " + this.getCardName(card) + " of " + this.getCardSuit(card) + ".";
 			},
@@ -191,9 +261,10 @@ module.exports = {
 			desc: "-Rolls stats for a new DnD character.",
 			properties: {
 				spam: YES,
-				pingsUser: YES
+				pingsUser: YES,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				return util.rollStats("[[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]]")
 			}
 		},
@@ -201,9 +272,10 @@ module.exports = {
 			desc: "-Rolls stats, race, and class for a new DnD character.",
 			properties: {
 				spam: YES,
-				pingsUser: YES
+				pingsUser: YES,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				return util.getClassName(Math.floor(Math.random() * cache.classCache.length)) + " & " + util.getRaceName(Math.floor(Math.random() * cache.raceCache.length))+util.rollStats("[[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]]")
 			}
 		},
@@ -211,9 +283,10 @@ module.exports = {
 			desc: "-Let your deepest, most intimate question be answered.",
 			properties: {
 				spam: YES,
-				pingsUser: YES
+				pingsUser: YES,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				return this.fortuneCache[Math.floor(Math.random() * this.fortuneCache.length)];
 			},
 			fortuneCache : {
@@ -301,9 +374,10 @@ module.exports = {
 			desc: "-Sets the game the bot is currently playing, if you have permission.",
 			properties: {
 				spam: NO,
-				pingsUser: NO
+				pingsUser: NO,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				if(userID == 157212139344494592 || userID == 143046791573536769){
 					bot.setPresence({game : {name : message.split("[[playing]] ")[1]}});
 				}
@@ -315,9 +389,10 @@ module.exports = {
 			desc: "-Sets the icon of the bot, if you have permission.",
 			properties: {
 				spam: NO,
-				pingsUser: NO
+				pingsUser: NO,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				if(userID == 157212139344494592){
 					if(message == "[[avatar]] bird"){
 						bot.editUserInfo({avatar : icon.bird});
@@ -337,9 +412,10 @@ module.exports = {
 			desc: "-You feeling lucky? Ask Star for details.",
 			properties: {
 				spam: NO,
-				pingsUser: YES
+				pingsUser: YES,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message) {
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
 				return util.handleRoll("[[2d1000]]")
 			}
 		},
@@ -347,9 +423,10 @@ module.exports = {
 			desc: "-Bot information.",
 			properties: {
 				spam: NO,
-				pingsUser: NO
+				pingsUser: NO,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message){
+			func: function(user, userID, channelID, message, cmds, bot){
 				return this.infoResponse.content;
 			},
 			infoResponse: {
@@ -360,9 +437,10 @@ module.exports = {
 			desc: "-Bot changelog.",
 			properties: {
 				spam: NO,
-				pingsUser: NO
+				pingsUser: NO,
+				embed: NO
 			},
-			func: function(user, userID, channelID, message){
+			func: function(user, userID, channelID, message, cmds, bot){
 				return this.changelogResponse.content;
 			},
 			changelogResponse: {

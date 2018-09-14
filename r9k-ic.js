@@ -1,8 +1,17 @@
 var Discord = require('discord.io');
+var request = require('request');
 var repository = './repo/';
 var util = require('./util/util');
 var commands = require('./cmds/cmds');
 var cache = require('./cache/cache');
+
+// Get auth data for login.
+try {
+	var auth = require("./auth/auth.json");
+} catch (e){
+	console.log("No auth.JSON file.\n"+e.stack);
+	process.exit();
+}
 
 // Get DnD data.
 // Thanks, https://www.reddit.com/r/DnD/comments/33i1hd/5e_spell_reference_mobile_app/cqocaf8/ for the spells list.
@@ -21,12 +30,14 @@ try {
 
 // Get the wolfram alpha client.
 try {
-	var wolfram = require('wolfram-alpha').createClient("H9GWLU-HK2G84W5A7");
-	
+	var wolfram = require('wolfram-alpha').createClient(auth.wolframAPItoken);
+	var resultOpts = ["Result", "Exact result", "Decimal approximation"];
+	/*
 	wolfram.query("integrate 2x", function(_e, result) {
 		if(_e){ throw _e; }
-		console.log("Result: " + result);
+	//	console.log("Result: " + result);
 	});
+	*/
 } catch (e){
 	console.log("No Wolfram Alpha Connection."+e.stack);
 }
@@ -38,13 +49,7 @@ try {
 	console.log("No icon.JSON file.\n"+e.stack);
 }
 
-// Get auth data for login.
-try {
-	var auth = require("./auth/auth.json");
-} catch (e){
-	console.log("No auth.JSON file.\n"+e.stack);
-	process.exit();
-}
+
 
 var bot = new Discord.Client({
 	token: auth.token,
@@ -68,7 +73,8 @@ var picResponseCache = {
 	"wayde": repository+"wayde_stay_night.jpg",
 	"direct crit full thrust": repository+"wayde_stay_night.jpg",
 	"!pazuzu": repository+"wayde_stay_night.jpg",
-	"how goes the wayding": repository+"wayde_stay_night.jpg"
+	"how goes the wayding": repository+"wayde_stay_night.jpg",
+	"[[fflogsranks,parthel extelsiar,exodus]]": repository+"parthel_the_grey.png"
 };
 
 /* Saves Servers "Info only" */
@@ -94,7 +100,7 @@ bot.on("message", function(user, userID, channelID, message, event) {
 	
 	if(userID == bot.id){return;}
 
-	console.log("\n==== New Message ====")
+	console.log("\n==== New Message ====");
 	console.log(user + " - " + userID);
 	console.log("in " + channelID);
 	console.log(message);
@@ -102,9 +108,6 @@ bot.on("message", function(user, userID, channelID, message, event) {
 
 	//Make everything check in lower.
 	var msg = message.toLowerCase();
-	
-	//Save a response chain to send it all in one message.
-	var res = "";
 	
 	//Exclusive section.
 	if(picResponseCache[msg]) {
@@ -127,17 +130,24 @@ bot.on("message", function(user, userID, channelID, message, event) {
 		sendMessages(channelID, ["<:fms:249379205840633857>"]);
 	}
 	
-	var re = /(?:\[\[(.*?)\]\])/gmi, cmds;
-	while((cmds = re.exec(message)) != null){
-		console.log(cmds[1]);
+	var re = /(?:\[\[(.*?)\]\])/gmi, cmds = [], temp1, temp2;
+	var re2 = /(?:([^\n\r,]+))/gmi;
+	
+	while((temp1 = re.exec(message)) != null){
+		console.log(temp1[1]);
+		while((temp2 = re2.exec(temp1[1])) != null){ cmds.push(temp2[1]); }
 		
-		var funcComm = commands.functionResponseCache[cmds[1].toLowerCase()];
-		var pmComm = commands.pmResponseCache[cmds[1].toLowerCase()];
+		var funcComm = commands.functionResponseCache[cmds[0].toLowerCase()];
+		var pmComm = commands.pmResponseCache[cmds[0].toLowerCase()];
 		if(funcComm){
 			if(funcComm.properties.spam == NO || !util.isNoSpamChannel(channelID)){
-				var response = ((funcComm.properties.pingsUser == YES) ? util.pingUser(userID) : "") + funcComm.func(user, userID, channelID, message);
-				
-				if(response != NO_RESPONSE){ sendMessages(channelID, [response]); }
+				if(funcComm.properties.embed == NO){
+					var response = ((funcComm.properties.pingsUser == YES) ? util.pingUser(userID) : "") + funcComm.func(user, userID, channelID, message, cmds, bot);
+					
+					if(response != NO_RESPONSE){ sendMessages(channelID, [response]); }
+				} else {
+					funcComm.func(user, userID, channelID, message, cmds, bot, sendEmbed);
+				}
 			} else { console.log("Spam command: \"" + cmds[1] + "\" blocked in channel - " + channelID); }
 		} else if(pmComm){
 			sendMessages(userID, [pmComm.func(user, userID, channelID, message)]);
@@ -209,4 +219,11 @@ function sendFiles(channelID, fileArr, interval) {
 		}, interval);
 	}
 	_sendFiles();
+}
+
+function sendEmbed(ID, _embed){
+	bot.sendMessage({
+		to: ID,
+		embed: _embed
+	});
 }
