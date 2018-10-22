@@ -27,7 +27,6 @@ module.exports = {
 	},
 	/* Response Cache as a catch-all for commands in brackets. */
 	functionResponseCache: {
-		
 		"fflogsranks": {
 			desc: "-TODO.",
 			properties: {
@@ -378,7 +377,7 @@ module.exports = {
 				embed: NO
 			},
 			func: function(user, userID, channelID, message, cmds, bot, callback) {
-				if(userID == 157212139344494592 || userID == 143046791573536769){
+				if(userID == 157212139344494592){
 					bot.setPresence({game : {name : message.split("[[playing]] ")[1]}});
 				}
 				
@@ -430,7 +429,7 @@ module.exports = {
 				return this.infoResponse.content;
 			},
 			infoResponse: {
-				content: "```\nr9k-ic bot by Archaic.\nLast Updated: 09-06-2018\nver. 1.10\n```"
+				content: "```\nr9k-ic bot by Archaic.\nLast Updated: 09-14-2018\nver. 1.20\n```"
 			}
 		},
 		"changelog":{
@@ -448,6 +447,7 @@ module.exports = {
 							"\nver. 1.05:\t01-18-2017\n\tCrab Feeder. ([[3d10f1s4]])\n" +
 							"\nver. 1.06:\t01-24-2017\n\tMonster Lookup. (Ancient Red Dragon)\n" +
 							"\nver. 1.10:\t09-06-2018\n\tRemove legacy commands & refactor.\n" +
+							"\nver. 1.20:\t09-14-2018\n\tAdded FFlogs rankings pulls.\n" +
 							"```"
 			}
 		}
@@ -462,7 +462,7 @@ module.exports = {
 			(info.duration ?	 "\n\tDuration    : " + info.duration : "") +
 			(info.desc ? 		 "\n\t\t"+info.desc : "");
 		res += "```"
-		return res;
+		return util.splitMessage(res, {prepend: "```", append: "```"});
 	},
 	getArmorString: function(info){
 		var res = 	"```\n" +

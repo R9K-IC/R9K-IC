@@ -1,3 +1,5 @@
+var repository = './repo/';
+
 module.exports = {
 	helpResponse: {
 		content: 	"Exact commands:\n"+
@@ -34,6 +36,8 @@ module.exports = {
 							"-Inline sum probability command. Ex. [[8d6>?30]]\n\t"+
 						"[[NdNfNsN]]\n\t\t"+
 							"-Inline success/failure probability command. Ex. [[3d10f1s4]]\n\t"+
+						"[[fflogsranks,<character name>,<world>]]\n\t\t"+
+							"-TODO.\n\t"+
 						"[[lottery]]\n\t\t"+
 							"-You feeling lucky? Ask Star for details.\n\t"+
 						"[[domtlist]]\n\t\t"+
@@ -58,6 +62,19 @@ module.exports = {
 						"[[rollchar]]\n\t\t"+
 							"-Rolls stats, race, and class for a new DnD character."+
 				"```\n",
+	},
+	picResponseCache: {
+		"i swear officer": repository+"twenty.png",
+		"do it for him": repository+"morality.jpg",
+		"weapons": repository+"weapons.png",
+		"armors": repository+"armors.png",
+		"karaoke": repository+"wayde_stay_night.jpg",
+		"wade": repository+"wade_stay_night.jpg",
+		"wayde": repository+"wayde_stay_night.jpg",
+		"direct crit full thrust": repository+"wayde_stay_night.jpg",
+		"!pazuzu": repository+"wayde_stay_night.jpg",
+		"how goes the wayding": repository+"wayde_stay_night.jpg",
+		"[[fflogsranks,parthel extelsiar,exodus]]": repository+"parthel_the_grey.png"
 	},
 	domtCache: {
 		"star": "Increase one of your ability scores by 2. The score can exceed 20 but can't exceed 24.",

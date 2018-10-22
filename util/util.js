@@ -30,7 +30,6 @@ module.exports = {
 		
 		while((rolls = re.exec(message)) != null){
 			var diceNum = rolls[1], d = rolls[2], rollNum = rolls[3], mod = rolls[4], modNum = rolls[5], add = rolls[6], addNum = rolls[7], numsArr = [], sortArr = [], dropArr = [], sum = (add != null) ? ((add === "+") ? -(-addNum) : -addNum) : 0, swap;
-			console.log(diceNum + " " + d + " " + rollNum + " " + mod + " " + modNum + " " + add + " " + addNum);
 
 			res += "\n" + diceNum + rolls[2] + rollNum + ((mod != null) ? mod + "" + modNum : "") + ((add != null) ? add + addNum : "") + " [[";
 
@@ -77,7 +76,6 @@ module.exports = {
 		
 		while((rolls = re.exec(message)) != null){
 			var diceNum = rolls[1], d = rolls[2], rollNum = rolls[3], mod = rolls[4], modNum = rolls[5], add = rolls[6], addNum = rolls[7], numsArr = [], sortArr = [], dropArr = [], sum = (add != null) ? ((add === "+") ? -(-addNum) : -addNum) : 0, swap;
-			console.log(diceNum + " " + d + " " + rollNum + " " + mod + " " + modNum + " " + add + " " + addNum);
 			
 			res += "\n" + diceNum + rolls[2] + rollNum + ((mod != null) ? mod + "" + modNum : "") + ((add != null) ? add + addNum : "") + " [[";
 			
@@ -98,7 +96,6 @@ module.exports = {
 			}
 			
 			if(mod != null){
-				
 				sortArr = sortArr.sort(function(a,b){return a-b;});
 				
 				if(/dh|kl/.test(mod)){sortArr = sortArr.reverse();}
@@ -128,22 +125,17 @@ module.exports = {
 	},
 	handleCrab: function(message){
 		// Regex Golf!
-		var re = /(?:\[\[(\d+)d(\d+)f(\d+)s(\d+)?\]\])/gmi, rolls, res = "```Markdown\n", diceLimit = 500, rollLimit = 1000000000;
+		var re = /(?:\[\[(\d+)d(\d+)f(\d+)s(\d+)?\]\])/gmi, rolls, res = "", diceLimit = 500, rollLimit = 1000000000;
 		
 		while((rolls = re.exec(message)) != null){
 			var diceNum = rolls[1], rollNum = rolls[2], fail = rolls[3], success = rolls[4];
-			console.log(diceNum + "d" + rollNum + " f " + fail + " s " + success);
 			
 			if(diceNum > diceLimit || rollNum > rollLimit){
 				return "Rolls that high are not supported. Try less than 500 dice or 1 billion in dice values. Keep in mind the character limit in Discord is 2000 and the bot will not post rolls over that limit.";
 			}
 			
-			return getCrab(diceNum, rollNum, fail, success);
-			//var probability = getCrab(diceNum, rollNum, fail, success);
-			//return "```Markdown\n" + probability + "% chance to" + " on " + diceNum + "d" + rollNum + "\n```";
+			res += getCrab(diceNum, rollNum, fail, success);
 		}
-		
-		res += "```";
 		
 		return res;
 	},
@@ -179,9 +171,7 @@ function getCrab(diceNum, rollNum, fail, success){
 		}
 	}
 	
-	console.log(polyArr);
 	var full = fullPoly(polyArr);
-	console.log(full);
 	var pow = Math.pow(rollNum, diceNum);
 	
 	var res = "```Markdown\n" + diceNum + "d" + rollNum + " where " + fail + " and under are failures and " + success + " and over are successes.\n";
@@ -242,7 +232,7 @@ function fullPoly(polyArr){
 
 function combinePoly(arr1, arr2){
 	var res = [];
-	console.log(arr1.length + " " + arr2.length);
+	
 	for(var i = 0; i < arr1.length + arr2.length - 1; i++){
 		res[i] = 0;
 	}
@@ -262,7 +252,6 @@ var NO = "NO";
 var NO_RESPONSE = "NO_RESPONSE";
 
 /* Saved Channels "Spam or no spam" */
-
 var noSpamChannels = {
 	"239477486528888833": NO,
 	"253616105875046400": NO,

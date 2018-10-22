@@ -13,6 +13,10 @@ try {
 	process.exit();
 }
 
+var date = new Date();
+var origTime = (date.getMonth() + 1) + "-" + date.getDate() + "-" + date.getFullYear() + ", " + date.getHours() + ":" + date.getMinutes();
+var disCounter = 0;
+
 // Get DnD data.
 // Thanks, https://www.reddit.com/r/DnD/comments/33i1hd/5e_spell_reference_mobile_app/cqocaf8/ for the spells list.
 // Thanks, https://github.com/Buluphont/Spellbot for the monster list.
@@ -42,15 +46,6 @@ try {
 	console.log("No Wolfram Alpha Connection."+e.stack);
 }
 
-// Get icon data for changing icons.
-try {
-	var icon = require(repository+"icon.json");
-} catch (e){
-	console.log("No icon.JSON file.\n"+e.stack);
-}
-
-
-
 var bot = new Discord.Client({
 	token: auth.token,
 	autorun: true
@@ -61,30 +56,9 @@ var YES = "YES";
 var NO = "NO";
 var NO_RESPONSE = "NO_RESPONSE";
 
-/* Response Array */
-
-var picResponseCache = {
-	"i swear officer": repository+"twenty.png",
-	"do it for him": repository+"morality.jpg",
-	"weapons": repository+"weapons.png",
-	"armors": repository+"armors.png",
-	"karaoke": repository+"wayde_stay_night.jpg",
-	"wade": repository+"wade_stay_night.jpg",
-	"wayde": repository+"wayde_stay_night.jpg",
-	"direct crit full thrust": repository+"wayde_stay_night.jpg",
-	"!pazuzu": repository+"wayde_stay_night.jpg",
-	"how goes the wayding": repository+"wayde_stay_night.jpg",
-	"[[fflogsranks,parthel extelsiar,exodus]]": repository+"parthel_the_grey.png"
-};
-
-/* Saves Servers "Info only" */
-
-var infoServers = {
-	"165998917270503424": YES
-}
+var picResponseCache = cache.picResponseCache;
 
 /*Event area*/
-
 bot.on("ready", function(event) {
 	console.log("Connected!");
 	console.log("Logged in as: ");
@@ -99,39 +73,33 @@ bot.on("messageUpdate", function(event) {
 bot.on("message", function(user, userID, channelID, message, event) {
 	
 	if(userID == bot.id){return;}
-
+	var msg = message.toLowerCase(), re = /(?:\[\[(.*?)\]\])/gmi, re2 = /(?:([^\n\r,]+))/gmi, cmds = [], temp1, temp2;
+	
 	console.log("\n==== New Message ====");
 	console.log(user + " - " + userID);
 	console.log("in " + channelID);
 	console.log(message);
 	console.log("----------");
-
-	//Make everything check in lower.
-	var msg = message.toLowerCase();
 	
 	//Exclusive section.
 	if(picResponseCache[msg]) {
 		sendFiles(channelID, [picResponseCache[msg]]);
-	}else if(dndWeaponHash[msg]){
-		sendMessages(channelID, [commands.getWeaponString(dndWeaponCache[dndWeaponHash[msg]])]);
-	}else if(dndArmorHash[msg]){
-		sendMessages(channelID, [commands.getArmorString(dndArmorCache[dndArmorHash[msg]])]);
-	}else if(msg != "crab" && dndMonsterHash[msg]){
-		sendMessages(channelID, commands.getMonsterString(dndMonsterCache[dndMonsterHash[msg]]));
 	}
 	
-	if(dndSpellHash[msg]){
-		sendMessages(channelID, util.splitMessage(commands.getSpellString(dndSpellCache[dndSpellHash[msg]]), {prepend: "```", append: "```"}));
+	if(dndWeaponHash[msg]){
+		sendMessages(channelID, [commands.getWeaponString(dndWeaponCache[dndWeaponHash[msg]])]); return;
+	}else if(dndSpellHash[msg]){
+		sendMessages(channelID, [commands.getSpellString(dndSpellCache[dndSpellHash[msg]])]); return;
+	}else if(dndArmorHash[msg]){
+		sendMessages(channelID, [commands.getArmorString(dndArmorCache[dndArmorHash[msg]])]); return;
+	}else if(msg != "crab" && dndMonsterHash[msg]){
+		sendMessages(channelID, commands.getMonsterString(dndMonsterCache[dndMonsterHash[msg]])); return;
 	}
 	
 	//Nonexclusive section.
-	
 	if (message.includes("my shit up") || message.includes("kys") || message.includes(bot.id)){
 		sendMessages(channelID, ["<:fms:249379205840633857>"]);
 	}
-	
-	var re = /(?:\[\[(.*?)\]\])/gmi, cmds = [], temp1, temp2;
-	var re2 = /(?:([^\n\r,]+))/gmi;
 	
 	while((temp1 = re.exec(message)) != null){
 		console.log(temp1[1]);
@@ -148,7 +116,7 @@ bot.on("message", function(user, userID, channelID, message, event) {
 				} else {
 					funcComm.func(user, userID, channelID, message, cmds, bot, sendEmbed);
 				}
-			} else { console.log("Spam command: \"" + cmds[1] + "\" blocked in channel - " + channelID); }
+			} else { console.log("Spam command: \"" + cmds[0] + "\" blocked in channel - " + channelID); }
 		} else if(pmComm){
 			sendMessages(userID, [pmComm.func(user, userID, channelID, message)]);
 		}
@@ -165,6 +133,10 @@ bot.on("message", function(user, userID, channelID, message, event) {
 
 bot.on("presence", function(user, userID, status, game, event) {
 	console.log(user + " is now: " + status);
+	if(userID == "265523588918935552"){ 
+		disCounter++;
+		//commands.functionResponseCache["playing"].func("", "157212139344494592", "", "[[playing]] DisCal has gone online " + disCounter + " times since " + origTime + "!", "", bot);
+	}
 });
 
 bot.on("any", function(event) {
