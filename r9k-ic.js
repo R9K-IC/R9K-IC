@@ -132,7 +132,7 @@ bot.on("message", function(user, userID, channelID, message, event) {
 
 	if (message.includes("please clap")){
 		sendMessages(channelID, ["👏"])
-    }
+	}
 
     if (message.includes("please laugh")){
     	sendMessages(channelID, ["😂"])
