@@ -129,6 +129,14 @@ bot.on("message", function(user, userID, channelID, message, event) {
 	if (message.includes("my shit up") || message.includes("kys") || message.includes(bot.id)){
 		sendMessages(channelID, ["<:fms:249379205840633857>"]);
 	}
+
+	if (message.includes("please clap")){
+		sendMessages(channelID, ["👏"])
+	}
+
+    if (message.includes("please laugh")){
+    	sendMessages(channelID, ["😂"])
+	}
 	
 	var re = /(?:\[\[(.*?)\]\])/gmi, cmds = [], temp1, temp2;
 	var re2 = /(?:([^\n\r,]+))/gmi;
