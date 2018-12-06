@@ -106,7 +106,7 @@ bot.on("message", function(user, userID, channelID, message, event) {
 	}
 
 	if (message.includes("please laugh")){
-    	sendMessages(channelID, ["😂"])
+		sendMessages(channelID, ["😂"])
 	}
 	
 	while((temp1 = re.exec(message)) != null){

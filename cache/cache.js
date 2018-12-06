@@ -37,7 +37,9 @@ module.exports = {
 						"[[NdNfNsN]]\n\t\t"+
 							"-Inline success/failure probability command. Ex. [[3d10f1s4]]\n\t"+
 						"[[fflogsranks,<character name>,<world>]]\n\t\t"+
-							"-TODO.\n\t"+
+							"-Searches up a FFXIV character's parses for the current raid tier.\n\t"+
+						"[[wolfram,<search>]]\n\t\t"+
+							"-Asks Wolfram Alpha what it thinks about your search.\n\t"+
 						"[[lottery]]\n\t\t"+
 							"-You feeling lucky? Ask Star for details.\n\t"+
 						"[[domtlist]]\n\t\t"+
@@ -61,6 +63,11 @@ module.exports = {
 							"-Let your deepest, most intimate question be answered.\n\t"+
 						"[[rollchar]]\n\t\t"+
 							"-Rolls stats, race, and class for a new DnD character."+
+						"[[dragsnipe,<base rate>,<number of rolls>(,<pity rate>)]]\n\t\t"+
+							"-Returns the chances you have of sniping a particular unit in Dragalia.\n\t\t"+
+							"  Base rate is in % and is the rate of what you want with no pity rate.\n\t\t"+
+							"  Pity rate is in % and it is the rate at which you want to start.\n\t\t"+
+							"  Ex. [[dragsnipe,0.5,300]] | [[dragsnipe,1,20,5.5]].\n\t\t"+
 				"```\n",
 	},
 	picResponseCache: {

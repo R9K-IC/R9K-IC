@@ -85,6 +85,135 @@ module.exports = {
 				return res;
 			}
 		},
+		"wolfram": {
+			desc: "-TODO.",
+			properties: {
+				spam: NO,
+				pingsUser: NO,
+				embed: YES
+			},
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
+				console.log("1: " + cmds + "0: " + cmds[0]);
+				console.log(this.constructRequestURL(cmds[1]));
+				this.request = cmds[1];
+				request(this.constructRequestURL(cmds[1]), { json: true }, (err, res, body) => {
+					try{
+						if(err) { return console.log(err); }
+						if(body.status){ throw "help"; }
+						var res = this.constructEmbed(body);
+						callback(channelID, res);
+					} catch(e){
+						callback(channelID, { color: 3447003, title: "TODO" });
+					}
+				});
+			},
+			wolframKey: '?appid=' + auth.wolframAPItoken,
+			stepbystep: '&podstate=Step-by-step%20solution',
+			output: '&output=json',
+			input: '&input=',
+			request,
+			temp: '&podtitle=Input%20interpretation&podtitle=Result',
+			//wolframBase: 'http://api.wolframalpha.com/v1/simple',
+			wolframBase: 'http://api.wolframalpha.com/v2/query',
+			wolframLink: 'https://www.wolframalpha.com/input/?i=',
+			constructRequestURL: function(request){
+				var res = this.wolframBase;
+				res += this.wolframKey;
+				res += this.input + encodeURIComponent(request);
+				res += this.stepbystep;
+				res += this.output;
+
+				return res;
+			},
+			constructEmbed: function(message){
+				
+				var res = {
+					color: 9997003,
+					title: this.request,
+					url: this.wolframLink + encodeURIComponent(this.request),
+					fields: [],
+					timestamp: new Date()
+				}
+				
+				//console.log(res);
+				var pod, pods = message.queryresult.pods;
+				//console.log(pods);
+				
+				for(var i = 0; i < pods.length; i++){
+					pod = pods[i];
+					if(pod.subpods[0].plaintext == ""){ continue; }
+					if(pod.primary){ res.image = { url: pods[i].subpods[0].img.src } }
+					res.fields.push({
+						name: pod.title,
+						value: pod.subpods[0].plaintext
+					});
+				}
+				
+				/*
+				console.log(message.imageFile);
+				var res = {
+					color: 9997003,
+					title: decodeURI(this.request),
+					url: this.wolframLink + this.request,
+					fields: [],
+					image: {
+						url: 'data:image/gif;base64,' + new Buffer(message.imageFile).toString('base64')
+					},
+					timestamp: new Date()
+				}
+				
+				console.log(res.image.url);
+				*/
+				return res;
+			}
+		},
+		"dragsnipe": {
+			desc: "-Returns the chances you have of sniping a particular unit in Dragalia.",
+			properties: {
+				spam: NO,
+				pingsUser: YES,
+				embed: NO
+			},
+			func: function(user, userID, channelID, message, cmds, bot, callback) {
+				if(	!/^\d(?:.\d+)?$/.test(cmds[1]) || cmds[1] <= 0 || cmds[1] > 4 || !/^\d+$/.test(cmds[2]) || cmds[3] && !/^\d(?:.5)?$/.test(cmds[3])){
+					return "Improper usage, please check the manual. \"[[help]]\"";
+				}
+				if(cmds[2] > 50000){ return "Show me a wallet that big and I'll show you a prolapsed anus."; }
+				
+				return "```With a base rate of " + cmds[1] + "% and " + cmds[2] + " rolls costing " + cmds[2] * 150 + " wyrmite and a starting pity rate of " + (cmds[3] ? cmds[3] : 4) + "%\nYou have a " + this.atLeastOneSuccess(cmds[3] ? (cmds[3] - 4) / 0.5 : 0, cmds[1] / 100, cmds[2]) * 100 + "% chance of sniping that particular unit.```";
+			},
+			probHash: [],
+			aLOHash: [],
+			binHash: [],
+			rHash: [],
+			getKey: function(arr){ return arr.join("|") },
+			binomial: function(n, r){
+				var key = this.getKey([n, r]), res = 1, r = n - r > r ? r : n - r;
+				if(this.binHash[key]){ return this.binHash[key]; }
+				for(var i = 0; i < r; i++){ res *= n - i; res /= i + 1; }
+				return this.binHash[key] = res;
+			},
+			constructProb: function(p, r, s){
+				var key = this.getKey([p, r, s]), res = 1;
+				if(this.probHash[key]){ return this.probHash[key]; }
+				for(var i = 0; i < s; i++){ res -= this.binomial(r, i) * Math.pow(1 - p, r - i) * Math.pow(p, i); }
+				return this.probHash[key] = res;
+			},
+				atLeastOneSuccess: function(pity, baseP, r){
+				if(r == 0){ return 0; }
+				if(pity == 0 && r < 10){ return this.constructProb(baseP, r, 1) }
+				var key = this.getKey([pity, baseP, r]), rKey = this.getKey([pity, baseP, r < 10]), res = 0, rate = ((pity * 0.005) + 0.04) / 0.04, probOne, probOneBad;
+				if(this.aLOHash[key]){ return this.aLOHash[key]; }
+
+				//oops.
+				probOne = this.rHash[rKey] ? this.rHash[rKey][0] : (pity > 9 ? (baseP / 0.04) : 0) + (pity > 9 ? (1 - (baseP / 0.04)) : 1) * this.constructProb(baseP * rate, (pity > 9 ? 9 : (r < 10 ? 1 : 10)), 1);
+				probOneBad = this.rHash[rKey] ? this.rHash[rKey][1] : (this.constructProb(0.04 * rate, (r < 10 ? 1 : 10), 1) - probOne) / (1 - probOne);
+				this.rHash[rKey] = [probOne, probOneBad];
+				res += probOne + (1 - probOne) * (pity > 9 ? this.atLeastOneSuccess(0, baseP, r - (r < 10 ? 1 : 10)) : ((1 - probOneBad) * this.atLeastOneSuccess(pity + (r < 10 ? 0 : 1), baseP, r - (r < 10 ? 1 : 10)) + probOneBad * this.atLeastOneSuccess(0, baseP, r - (r < 10 ? 1 : 10))));
+
+				return this.aLOHash[key] = res;
+			}
+		},
 		"honk": {
 			desc: "-Honk Honk.",
 			properties: {
