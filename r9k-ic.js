@@ -13,10 +13,6 @@ try {
 	process.exit();
 }
 
-var date = new Date();
-var origTime = (date.getMonth() + 1) + "-" + date.getDate() + "-" + date.getFullYear() + ", " + date.getHours() + ":" + date.getMinutes();
-var disCounter = 0;
-
 // Get DnD data.
 // Thanks, https://www.reddit.com/r/DnD/comments/33i1hd/5e_spell_reference_mobile_app/cqocaf8/ for the spells list.
 // Thanks, https://github.com/Buluphont/Spellbot for the monster list.
@@ -30,20 +26,6 @@ try {
 	var dndMonsterCache = dndJSON.monsters.data, dndMonsterHash = dndJSON.monsters.hash;
 } catch (e){
 	console.log("No dndCache.JSON file.\n"+e.stack);
-}
-
-// Get the wolfram alpha client.
-try {
-	var wolfram = require('wolfram-alpha').createClient(auth.wolframAPItoken);
-	var resultOpts = ["Result", "Exact result", "Decimal approximation"];
-	/*
-	wolfram.query("integrate 2x", function(_e, result) {
-		if(_e){ throw _e; }
-	//	console.log("Result: " + result);
-	});
-	*/
-} catch (e){
-	console.log("No Wolfram Alpha Connection."+e.stack);
 }
 
 var bot = new Discord.Client({
@@ -66,21 +48,21 @@ bot.on("ready", function(event) {
 });
 
 bot.on("messageUpdate", function(event) {
-	console.log(event);
-	console.log("caught edit!");
+	//console.log(event);
+	//console.log("caught edit!");
 });
 
 bot.on("message", function(user, userID, channelID, message, event) {
 	
 	if(userID == bot.id){return;}
 	var msg = message.toLowerCase(), re = /(?:\[\[(.*?)\]\])/gmi, re2 = /(?:([^\n\r,]+))/gmi, cmds = [], temp1, temp2;
-	
+	/*
 	console.log("\n==== New Message ====");
 	console.log(user + " - " + userID);
 	console.log("in " + channelID);
 	console.log(message);
 	console.log("----------");
-	
+	*/
 	//Exclusive section.
 	if(picResponseCache[msg]) {
 		sendFiles(channelID, [picResponseCache[msg]]);
@@ -110,7 +92,8 @@ bot.on("message", function(user, userID, channelID, message, event) {
 	}
 	
 	while((temp1 = re.exec(message)) != null){
-		console.log(temp1[1]);
+		console.log("\n==== New Message ====\n" + user + " - " + userID + "\nin " + channelID + "\n" + message + "\n----------\n" + temp1[1]);
+		cmds = [];
 		while((temp2 = re2.exec(temp1[1])) != null){ cmds.push(temp2[1]); }
 		
 		var funcComm = commands.functionResponseCache[cmds[0].toLowerCase()];
@@ -118,15 +101,15 @@ bot.on("message", function(user, userID, channelID, message, event) {
 		if(funcComm){
 			if(funcComm.properties.spam == NO || !util.isNoSpamChannel(channelID)){
 				if(funcComm.properties.embed == NO){
-					var response = ((funcComm.properties.pingsUser == YES) ? util.pingUser(userID) : "") + funcComm.func(user, userID, channelID, message, cmds, bot);
+					var response = ((funcComm.properties.pingsUser == YES) ? util.pingUser(userID) : "") + funcComm.func({user: user, userID: userID, channelID: channelID, message: message,  cmds: cmds, bot: bot});
 					
 					if(response != NO_RESPONSE){ sendMessages(channelID, [response]); }
 				} else {
-					funcComm.func(user, userID, channelID, message, cmds, bot, sendEmbed);
+					funcComm.func({user: user, userID: userID, channelID: channelID, message: message,  cmds: cmds, bot: bot, callback: sendEmbed});
 				}
 			} else { console.log("Spam command: \"" + cmds[0] + "\" blocked in channel - " + channelID); }
 		} else if(pmComm){
-			sendMessages(userID, [pmComm.func(user, userID, channelID, message)]);
+			sendMessages(userID, [pmComm.func({user: user, userID: userID, channelID: channelID, message: message})]);
 		}
 	}
 	
@@ -140,11 +123,7 @@ bot.on("message", function(user, userID, channelID, message, event) {
 });
 
 bot.on("presence", function(user, userID, status, game, event) {
-	console.log(user + " is now: " + status);
-	if(userID == "265523588918935552"){ 
-		disCounter++;
-		//commands.functionResponseCache["playing"].func("", "157212139344494592", "", "[[playing]] DisCal has gone online " + disCounter + " times since " + origTime + "!", "", bot);
-	}
+	//console.log(user + " is now: " + status);
 });
 
 bot.on("any", function(event) {

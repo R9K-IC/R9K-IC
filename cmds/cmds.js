@@ -20,7 +20,7 @@ module.exports = {
 				pingsUser: NO,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				return cache.helpResponse.content;
 			}
 		}
@@ -34,17 +34,17 @@ module.exports = {
 				pingsUser: NO,
 				embed: YES
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
-				console.log("1: "+cmds + "0: " + cmds[0]);
-				console.log(this.constructRequestURL(cmds[1], cmds[2], "na"));
-				request(this.constructRequestURL(cmds[1], cmds[2], "na"), { json: true }, (err, res, body) => {
+			func: function(_msg) {
+				console.log("1: "+_msg.cmds + "0: " + _msg.cmds[0]);
+				console.log(this.constructRequestURL(_msg.cmds[1], _msg.cmds[2], "na"));
+				request(this.constructRequestURL(_msg.cmds[1], _msg.cmds[2], "na"), { json: true }, (err, res, body) => {
 					try{
 						if(err) { return console.log(err); }
 						if(body.status){ throw "help"; }
 						var res = this.constructEmbed(body);
-						callback(channelID, res);
+						_msg.callback(_msg.channelID, res);
 					} catch(e){
-						callback(channelID, { color: 3447003, title: "TODO" });
+						_msg.callback(_msg.channelID, { color: 3447003, title: "TODO" });
 					}
 				});
 			},
@@ -92,18 +92,18 @@ module.exports = {
 				pingsUser: NO,
 				embed: YES
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
-				console.log("1: " + cmds + "0: " + cmds[0]);
-				console.log(this.constructRequestURL(cmds[1]));
-				this.request = cmds[1];
-				request(this.constructRequestURL(cmds[1]), { json: true }, (err, res, body) => {
+			func: function(_msg) {
+				console.log("1: " + _msg.cmds + "0: " + _msg.cmds[0]);
+				console.log(this.constructRequestURL(_msg.cmds[1]));
+				this.request = _msg.cmds[1];
+				request(this.constructRequestURL(_msg.cmds[1]), { json: true }, (err, res, body) => {
 					try{
 						if(err) { return console.log(err); }
 						if(body.status){ throw "help"; }
 						var res = this.constructEmbed(body);
-						callback(channelID, res);
+						_msg.callback(_msg.channelID, res);
 					} catch(e){
-						callback(channelID, { color: 3447003, title: "TODO" });
+						_msg.callback(_msg.channelID, { color: 3447003, title: "TODO" });
 					}
 				});
 			},
@@ -113,7 +113,6 @@ module.exports = {
 			input: '&input=',
 			request,
 			temp: '&podtitle=Input%20interpretation&podtitle=Result',
-			//wolframBase: 'http://api.wolframalpha.com/v1/simple',
 			wolframBase: 'http://api.wolframalpha.com/v2/query',
 			wolframLink: 'https://www.wolframalpha.com/input/?i=',
 			constructRequestURL: function(request){
@@ -135,9 +134,7 @@ module.exports = {
 					timestamp: new Date()
 				}
 				
-				//console.log(res);
 				var pod, pods = message.queryresult.pods;
-				//console.log(pods);
 				
 				for(var i = 0; i < pods.length; i++){
 					pod = pods[i];
@@ -149,21 +146,6 @@ module.exports = {
 					});
 				}
 				
-				/*
-				console.log(message.imageFile);
-				var res = {
-					color: 9997003,
-					title: decodeURI(this.request),
-					url: this.wolframLink + this.request,
-					fields: [],
-					image: {
-						url: 'data:image/gif;base64,' + new Buffer(message.imageFile).toString('base64')
-					},
-					timestamp: new Date()
-				}
-				
-				console.log(res.image.url);
-				*/
 				return res;
 			}
 		},
@@ -174,13 +156,13 @@ module.exports = {
 				pingsUser: YES,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
-				if(	!/^\d(?:.\d+)?$/.test(cmds[1]) || cmds[1] <= 0 || cmds[1] > 4 || !/^\d+$/.test(cmds[2]) || cmds[3] && !/^\d(?:.5)?$/.test(cmds[3])){
+			func: function(_msg) {
+				if(	!/^(?:(?:\d(?:\.\d+)?)|(?:\d?(?:\.\d+)))$/.test(_msg.cmds[1]) || _msg.cmds[1] <= 0 || _msg.cmds[1] > 4 || !/^\d+$/.test(_msg.cmds[2]) || _msg.cmds[3] && !/^\d(?:\.(?:5|0))?$/.test(_msg.cmds[3])){
 					return "Improper usage, please check the manual. \"[[help]]\"";
 				}
-				if(cmds[2] > 50000){ return "Show me a wallet that big and I'll show you a prolapsed anus."; }
+				if(_msg.cmds[2] > 50000){ return "Show me a wallet that big and I'll show you a prolapsed anus."; }
 				
-				return "```With a base rate of " + cmds[1] + "% and " + cmds[2] + " rolls costing " + cmds[2] * 150 + " wyrmite and a starting pity rate of " + (cmds[3] ? cmds[3] : 4) + "%\nYou have a " + this.atLeastOneSuccess(cmds[3] ? (cmds[3] - 4) / 0.5 : 0, cmds[1] / 100, cmds[2]) * 100 + "% chance of sniping that particular unit.```";
+				return "```With a base rate of " + _msg.cmds[1] + "% and " + _msg.cmds[2] + " rolls costing " + _msg.cmds[2] * 150 + " wyrmite and a starting pity rate of " + (_msg.cmds[3] ? _msg.cmds[3] : 4) + "%\nYou have a " + this.atLeastOneSuccess(_msg.cmds[3] ? (_msg.cmds[3] - 4) / 0.5 : 0, _msg.cmds[1] / 100, _msg.cmds[2]) * 100 + "% chance of sniping that particular unit.```";
 			},
 			probHash: [],
 			aLOHash: [],
@@ -221,7 +203,7 @@ module.exports = {
 				pingsUser: NO,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				return 	".\n"+
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢰⣶⣶⢀⣴⣄\n"+
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢸⣿⣿⣿⠟⠋\n"+
@@ -253,7 +235,7 @@ module.exports = {
 				pingsUser: NO,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				return 	"```\n"+
 						"                E V E R Y F U C K I N G T I M E\n"+
 						"              / V                           / V\n"+
@@ -288,7 +270,7 @@ module.exports = {
 				pingsUser: YES,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				card = Math.floor(Math.random() * 22);
 				return "You drew " + util.getDNDCardName(card) + "." + "\n" + cache.domtCache[util.getDNDCardName(card).toLowerCase()];
 			}
@@ -300,7 +282,7 @@ module.exports = {
 				pingsUser: NO,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				return "Vizier, Sun, Moon, Star, Comet, The Fates, Throne, Key, Knight, Gem, Talons, The Void, Flames, Skull, Idiot, Donjon, Ruin, Euryale, Rogue, Balance, Fool, Jester";
 			}
 		},
@@ -311,7 +293,7 @@ module.exports = {
 				pingsUser: YES,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				return "You drew " + this.getTarotCardName(Math.floor(Math.random() * 22)) + ".";
 			},
 			tarotCache: {
@@ -350,7 +332,7 @@ module.exports = {
 				pingsUser: YES,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				card = Math.floor(Math.random() * this.deckSize);
 				return "You drew a " + this.getCardName(card) + " of " + this.getCardSuit(card) + ".";
 			},
@@ -392,7 +374,7 @@ module.exports = {
 				pingsUser: YES,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				return util.rollStats("[[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]]")
 			}
 		},
@@ -403,7 +385,7 @@ module.exports = {
 				pingsUser: YES,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				return util.getClassName(Math.floor(Math.random() * cache.classCache.length)) + " & " + util.getRaceName(Math.floor(Math.random() * cache.raceCache.length))+util.rollStats("[[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]]")
 			}
 		},
@@ -414,7 +396,7 @@ module.exports = {
 				pingsUser: YES,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				return this.fortuneCache[Math.floor(Math.random() * this.fortuneCache.length)];
 			},
 			fortuneCache : {
@@ -505,9 +487,9 @@ module.exports = {
 				pingsUser: NO,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
-				if(userID == 157212139344494592){
-					bot.setPresence({game : {name : message.split("[[playing]] ")[1]}});
+			func: function(_msg) {
+				if(_msg.userID == 157212139344494592){
+					_msg.bot.setPresence({game : {name : _msg.message.split("[[playing]] ")[1]}});
 				}
 				
 				return NO_RESPONSE;
@@ -520,16 +502,16 @@ module.exports = {
 				pingsUser: NO,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
-				if(userID == 157212139344494592){
-					if(message == "[[avatar]] bird"){
-						bot.editUserInfo({avatar : icon.bird});
+			func: function(_msg) {
+				if(_msg.userID == 157212139344494592){
+					if(_msg.message == "[[avatar]] bird"){
+						_msg.bot.edit_msg.UserInfo({avatar : icon.bird});
 					}
-					else if (message == "[[avatar]] elf"){
-						bot.editUserInfo({avatar : icon.elf});
+					else if (_msg.message == "[[avatar]] elf"){
+						_msg.bot.edit_msg.UserInfo({avatar : icon.elf});
 					}
 					else{
-						bot.editUserInfo({avatar : icon.cat});
+						_msg.bot.edit_msg.UserInfo({avatar : icon.cat});
 					}
 				}
 				
@@ -543,7 +525,7 @@ module.exports = {
 				pingsUser: YES,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot, callback) {
+			func: function(_msg) {
 				return util.handleRoll("[[2d1000]]")
 			}
 		},
@@ -554,11 +536,11 @@ module.exports = {
 				pingsUser: NO,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot){
+			func: function(_msg){
 				return this.infoResponse.content;
 			},
 			infoResponse: {
-				content: "```\nr9k-ic bot by Archaic.\nLast Updated: 09-14-2018\nver. 1.20\n```"
+				content: "```\nr9k-ic bot by Archaic.\nLast Updated: 12-09-2018\nver. 1.30\n```"
 			}
 		},
 		"changelog":{
@@ -568,7 +550,7 @@ module.exports = {
 				pingsUser: NO,
 				embed: NO
 			},
-			func: function(user, userID, channelID, message, cmds, bot){
+			func: function(_msg){
 				return this.changelogResponse.content;
 			},
 			changelogResponse: {
@@ -577,6 +559,7 @@ module.exports = {
 							"\nver. 1.06:\t01-24-2017\n\tMonster Lookup. (Ancient Red Dragon)\n" +
 							"\nver. 1.10:\t09-06-2018\n\tRemove legacy commands & refactor.\n" +
 							"\nver. 1.20:\t09-14-2018\n\tAdded FFlogs rankings pulls.\n" +
+							"\nver. 1.30:\t12-09-2018\n\tAdded Wolfram Alpha support & dragsnipe.\n" +
 							"```"
 			}
 		}
