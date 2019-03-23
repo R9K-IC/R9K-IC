@@ -53,8 +53,8 @@ bot.on("messageUpdate", function(event) {
 });
 
 bot.on("message", function(user, userID, channelID, message, event) {
-	
-	if(userID == bot.id){return;}
+	if(event.d.author.bot){return;}
+	util.reactAtRandom({channelID: channelID, messageID: event.d.id, reaction: ":mysmm:539339078387367937", bot: bot});
 	var msg = message.toLowerCase(), re = /(?:\[\[(.*?)\]\])/gmi, re2 = /(?:([^\n\r,]+))/gmi, cmds = [], temp1, temp2;
 	/*
 	console.log("\n==== New Message ====");
@@ -71,11 +71,11 @@ bot.on("message", function(user, userID, channelID, message, event) {
 	if(dndWeaponHash[msg]){
 		sendMessages(channelID, [commands.getWeaponString(dndWeaponCache[dndWeaponHash[msg]])]); return;
 	}else if(dndSpellHash[msg]){
-		sendMessages(channelID, [commands.getSpellString(dndSpellCache[dndSpellHash[msg]])]); return;
+		sendEmbed(channelID, commands.getSpellString(dndSpellCache[dndSpellHash[msg]])); return;
 	}else if(dndArmorHash[msg]){
 		sendMessages(channelID, [commands.getArmorString(dndArmorCache[dndArmorHash[msg]])]); return;
 	}else if(msg != "crab" && dndMonsterHash[msg]){
-		sendMessages(channelID, commands.getMonsterString(dndMonsterCache[dndMonsterHash[msg]])); return;
+		sendEmbed(channelID, commands.getMonsterString(dndMonsterCache[dndMonsterHash[msg]])); return;
 	}
 	
 	//Nonexclusive section.
@@ -101,7 +101,7 @@ bot.on("message", function(user, userID, channelID, message, event) {
 		if(funcComm){
 			if(funcComm.properties.spam == NO || !util.isNoSpamChannel(channelID)){
 				if(funcComm.properties.embed == NO){
-					var response = ((funcComm.properties.pingsUser == YES) ? util.pingUser(userID) : "") + funcComm.func({user: user, userID: userID, channelID: channelID, message: message,  cmds: cmds, bot: bot});
+					var response = ((funcComm.properties.pingsUser == YES) ? util.pingUser(userID) : "") + funcComm.func({user: user, userID: userID, channelID: channelID, message: message, messageID: event.d.id, cmds: cmds, bot: bot});
 					
 					if(response != NO_RESPONSE){ sendMessages(channelID, [response]); }
 				} else {

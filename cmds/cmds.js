@@ -8,6 +8,15 @@ var cache = require('../cache/cache');
 var icon = require("../repo/icon.json");
 var auth = require("../auth/auth.json");
 
+/**
+This requires texlive, texlive-latex-extra, and imagemagick to be installed.
+Note that imagemagick additionally requires file permissions setups.
+
+See https://stackoverflow.com/questions/42928765/convertnot-authorized-aaaa-error-constitute-c-readimage-453
+**/
+var mathmode = require("mathmode");
+var fs = require("fs");
+
 var request = require('request');
 
 module.exports = {
@@ -113,6 +122,7 @@ module.exports = {
 			input: '&input=',
 			request,
 			temp: '&podtitle=Input%20interpretation&podtitle=Result',
+			//wolframBase: 'http://api.wolframalpha.com/v1/simple',
 			wolframBase: 'http://api.wolframalpha.com/v2/query',
 			wolframLink: 'https://www.wolframalpha.com/input/?i=',
 			constructRequestURL: function(request){
@@ -134,7 +144,9 @@ module.exports = {
 					timestamp: new Date()
 				}
 				
+				//console.log(res);
 				var pod, pods = message.queryresult.pods;
+				//console.log(pods);
 				
 				for(var i = 0; i < pods.length; i++){
 					pod = pods[i];
@@ -146,6 +158,21 @@ module.exports = {
 					});
 				}
 				
+				/*
+				console.log(message.imageFile);
+				var res = {
+					color: 9997003,
+					title: decodeURI(this.request),
+					url: this.wolframLink + this.request,
+					fields: [],
+					image: {
+						url: 'data:image/gif;base64,' + new Buffer(message.imageFile).toString('base64')
+					},
+					timestamp: new Date()
+				}
+				
+				console.log(res.image.url);
+				*/
 				return res;
 			}
 		},
@@ -194,6 +221,31 @@ module.exports = {
 				res += probOne + (1 - probOne) * (pity > 9 ? this.atLeastOneSuccess(0, baseP, r - (r < 10 ? 1 : 10)) : ((1 - probOneBad) * this.atLeastOneSuccess(pity + (r < 10 ? 0 : 1), baseP, r - (r < 10 ? 1 : 10)) + probOneBad * this.atLeastOneSuccess(0, baseP, r - (r < 10 ? 1 : 10))));
 
 				return this.aLOHash[key] = res;
+			}
+		},
+		"latex": {
+			desc: "-Latex formatting",
+			properties: {
+				spam: NO,
+				pingsUser: NO,
+				embed: NO
+			},
+			func: function(_msg) {
+				try{
+					var rnd = Math.round(Math.random() * 1000000);
+					var tmp = fs.createWriteStream(rnd + '.jpg');
+					var reconstruct = _msg.cmds[1];
+					for(var i = 2; i < _msg.cmds.length; i++){reconstruct += ',' + _msg.cmds[i]}
+					var stream = mathmode(reconstruct).pipe(tmp);
+					stream.on('finish', function(){
+						_msg.bot.uploadFile({
+							to: _msg.channelID,
+							file: "./" + rnd + ".jpg"
+						});
+						fs.unlink("./" + rnd + ".jpg");
+					});
+				} catch(e){ console.log(e); }
+				return NO_RESPONSE;
 			}
 		},
 		"honk": {
@@ -518,6 +570,27 @@ module.exports = {
 				return NO_RESPONSE;
 			}
 		},
+		"react": {
+			desc: "-Sets the reaction chance.",
+			properties: {
+				spam: NO,
+				pingsUser: NO,
+				embed: NO
+			},
+			func: function(_msg) {
+				if(_msg.userID == 157212139344494592){
+					if(/^(?:(?:\d(?:\.\d+)?)|(?:\d?(?:\.\d+)))$/.test(_msg.cmds[1]) && _msg.cmds[1] >= 0 && _msg.cmds[1] <= 1){
+						util.changeReactChance(_msg.cmds[1]);
+						_msg.bot.deleteMessage({channelID: _msg.channelID, messageID: _msg.messageID});
+					}
+					else{
+						return "```Invalid Input.```";
+					}
+				}
+				
+				return NO_RESPONSE;
+			}
+		},
 		"lottery": {
 			desc: "-You feeling lucky? Ask Star for details.",
 			properties: {
@@ -565,16 +638,29 @@ module.exports = {
 		}
 	},
 	getSpellString: function(info){
-		var res = 	"```\n" +
-			info.name +
-			(info.level ? "\n" + info.level + " " + info.school: "") +
-			(info.casting_time ? "\n\tCasting Time: " + info.casting_time : "") +
-			(info.range ?		 "\n\tRange       : " + info.range : "") +
-			(info.components ?	 "\n\tComponents  : " + info.components + (info.material ? " (" + info.material + ")" : "" ) : "") +
-			(info.duration ?	 "\n\tDuration    : " + info.duration : "") +
-			(info.desc ? 		 "\n\t\t"+info.desc : "");
-		res += "```"
-		return util.splitMessage(res, {prepend: "```", append: "```"});
+		var res = {
+			color: 9997003,
+			title: info.name,
+			fields: []
+		}
+		
+		if(info.level){			res.fields.push({name: "Level",			value: info.level + " " + info.school})}
+		if(info.casting_time){	res.fields.push({name: "Casting Time",	value: info.casting_time})}
+		if(info.range){			res.fields.push({name: "Range",			value: info.range})}
+		if(info.components){	res.fields.push({name: "Components",	value: info.components + (info.material ? " (" + info.material + ")" : "" )})}
+		if(info.duration){		res.fields.push({name: "Duration",		value: info.duration})}
+		if(info.desc){
+			var i = 0;
+			util.splitMessage(info.desc, {maxLength: 975, char: '.', append: "."}).forEach(function(m) {
+				res.fields.push({
+					name: i == 0 ? "Description" : "Description cont.",
+					value: m
+				});
+				i++;
+			});
+		}
+console.log(res);
+		return res;
 	},
 	getArmorString: function(info){
 		var res = 	"```\n" +
@@ -609,83 +695,106 @@ module.exports = {
 		return res;
 	},
 	getMonsterString: function(info){
+		var res = {
+			color: 9997003,
+			title: info.name,
+			fields: []
+		}
 		
-		console.log(info);
-		
-		var res1 = 	"```\n" +
-			info.name +
-			(info.size   	?"\n\tSize      : " + info.size: "") +
-			(info.type	 	?"\n\tType      : " + info.type: "") +
-			(info.alignment	?"\n\tAlignment : " + info.alignment: "") +
-			(info.ac		?"\n\tAC        : " + info.ac: "\n") +
-			(info.hp		?"\n\tHP        : " + info.hp: "") +
-			(info.speed		?"\n\tSpeed     : " + info.speed: "") +
-			(info.str		?"\n\tSTR       : " + info.str + " | ": "") +
-			(info.dex		?    "DEX : " + info.dex + " | ": "") +
-			(info.con		?    "CON : " + info.con + " | ": "") +
-			(info.int		?    "INT : " + info.int + " | ": "") +
-			(info.wis		?    "WIS : " + info.wis + " | ": "") +
-			(info.cha		?    "CHA : " + info.cha: "") +
-			(info.save		?"\n\tSaves     : " + info.save : "") +
-			(info.skill		?"\n\tSkill     : " + info.skill : "") +
-			(info.resist	?"\n\tResists   : " + info.resist : "") +
-			(info.vulnerable?"\n\tVuln.     : " + info.vulnerable : "") +
-			(info.immune	?"\n\tImmunities: " + info.immune : "") +
-	(info.conditionImmune	?"\n\tCond. Imm.: " + info.conditionImmune : "") +
-			(info.senses	?"\n\tSenses    : " + info.senses + " | ": "") +
+		var res1 = 	"" +
+			(info.size   	?"\nSize:     : " + info.size: "") +
+			(info.type	 	?"\nType      : " + info.type: "") +
+			(info.alignment	?"\nAlignment : " + info.alignment: "") +
+			(info.ac		?"\nAC        : " + info.ac: "\n") +
+			(info.hp		?"\nHP        : " + info.hp: "") +
+			(info.speed		?"\nSpeed     : " + info.speed: "") +
+			(info.str		?"\nSTR       : " + info.str + " | ": "") +
+			(info.dex		?  "DEX : " + info.dex + " | ": "") +
+			(info.con		?  "CON : " + info.con + " | ": "") +
+			(info.int		?  "INT : " + info.int + " | ": "") +
+			(info.wis		?  "WIS : " + info.wis + " | ": "") +
+			(info.cha		?  "CHA : " + info.cha: "") +
+			(info.save		?"\nSaves     : " + info.save : "") +
+			(info.skill		?"\nSkill     : " + info.skill : "") +
+			(info.resist	?"\nResists   : " + info.resist : "") +
+			(info.vulnerable?"\nVuln.     : " + info.vulnerable : "") +
+			(info.immune	?"\nImmunities: " + info.immune : "") +
+	(info.conditionImmune	?"\nCond. Imm.: " + info.conditionImmune : "") +
+			(info.senses	?"\nSenses    : " + info.senses + " | ": "\n") +
 			(info.passive	?"Passive Perception : " + info.passive : "") +
-			(info.languages	?"\n\tLanguages : " + info.languages : "") +
-			(info.cr		?"\n\tCR        : " + info.cr : "");
-		res1 += "```";
+			(info.languages	?"\nLanguages : " + info.languages : "") +
+			(info.cr		?"\nCR        : " + info.cr : "");
+		
+		res.fields.push({
+			name: "Stats",
+			value: res1
+		});
 		
 		var i = 0;
 		var res2 = "";
-		if(info.trait != null){
-			res2 += "```\nTraits:\n\t";
+		if(info.trait){
 			while(info.trait[i] != null){
-				res2 += "-" + info.trait[i].name + ": " + info.trait[i].text + (info.trait[i+1] ? "\n\t" : "");
+				res2 += "-" + info.trait[i].name + ": " + info.trait[i].text + (info.trait[i+1] ? "\n" : "");
 				i++;
 			}
 			if(!(info.trait instanceof Array)){
 				res2 += "-" + info.trait.name + ": " + info.trait.text;
 				i++;
 			}
-			res2 += "\n```";
+			
+			i = 0;
+			util.splitMessage(res2, {maxLength: 975}).forEach(function(m) {
+				res.fields.push({
+					name: i == 0 ? "Traits" : "Traits cont.",
+					value: m
+				});
+				i++;
+			});
 		}
 		
 		i = 0;
 		var res3 = "";
 		if(info.action != null){
-			res3 += "```\nActions:\n\t"; 
-			while(info.action[i] != null){
-				res3 += "-" + info.action[i].name + ": " + info.action[i].text + (info.action[i+1] ? "\n\t" : "");
+			while(info.action[i]){
+				res3 += "-" + info.action[i].name + ": " + info.action[i].text + "\n";
 				i++;
 			}
 			if(!(info.action instanceof Array)){
 				res3 += "-" + info.action.name + ": " + info.action.text;
 				i++;
 			}
-			res3 += "\n```";
+			
+			i = 0;
+			util.splitMessage(res3, {maxLength: 975}).forEach(function(m) {
+				res.fields.push({
+					name: i == 0 ? "Actions" : "Actions cont.",
+					value: m
+				});
+				i++;
+			});
 		}
 		
 		i = 0;
 		var res4 = "";
 		if(info.legendary != null){
-			res4 += "```\nLegendary Actions:\n\t";
-			while(info.legendary[i] != null){
-				res4 += "-" + info.legendary[i].name + ": " + info.legendary[i].text + (info.legendary[i+1] ? "\n\t" : "");
+			while(info.legendary[i]){
+				res4 += "-" + info.legendary[i].name + ": " + info.legendary[i].text + "\n";
 				i++;
 			}
 			if(!(info.legendary instanceof Array)){
-				res2 += "-" + info.legendary.name + ": " + info.legendary.text;
-				i++;
+				res4 += "-" + info.legendary.name + ": " + info.legendary.text;
 			}
-			res4 += "\n```";
+			
+			i = 0;
+			util.splitMessage(res4, {maxLength: 975}).forEach(function(m) {
+				res.fields.push({
+					name: i == 0 ? "Legendary Actions" : "Legendary Actions cont.",
+					value: m
+				});
+				i++;
+			});
 		}
 		
-		return util.splitMessage(res1, {prepend: "```", append: "```"}).concat(
-				util.splitMessage(res2, {prepend: "```", append: "```"})).concat(
-				util.splitMessage(res3, {prepend: "```", append: "```"})).concat(
-				util.splitMessage(res4, {prepend: "```", append: "```"}));
+		return res;
 	}
 };

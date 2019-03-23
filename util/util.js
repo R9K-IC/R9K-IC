@@ -4,6 +4,14 @@ module.exports = {
 	pingUser: function(userID){
 		return "<@" + userID + "> ";
 	},
+	reactAtRandom: function(_msg){
+		if(Math.random() < reactChance){
+			_msg.bot.addReaction(_msg);
+		}
+	},
+	changeReactChance: function(p){
+		reactChance = p;
+	},
 	isNoSpamChannel: function(channelID){
 		return noSpamChannels[channelID.toString()];
 	},
@@ -257,3 +265,5 @@ var noSpamChannels = {
 	"253616105875046400": NO,
 	"255882364725624833": NO
 }
+
+var reactChance = 0.01
