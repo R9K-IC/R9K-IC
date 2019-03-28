@@ -1,75 +1,6 @@
 var repository = './repo/';
 
 module.exports = {
-	helpResponse: {
-		content: 	"Exact commands:\n"+
-				"```\n"+
-					"Kosher Commands:\n\t"+
-						"do it for him\n\t\t"+
-							"-Please do it for him.\n\t"+
-						"i swear officer\n\t\t"+
-							"-Believe me!.\n\t"+
-						"[[<Any Deck of Many Things Card>]]\n\t\t"+
-							"-Prints the description of the corresponding card.\n\t"+
-						"<Any Spell>\n\t\t"+
-							"-Prints the entry for the DnD5e spell.\n\t"+
-						"<Any Weapon>\n\t\t"+
-							"-Prints the entry for the DnD5e weapon.\n\t"+
-						"<Any Armor>\n\t\t"+
-							"-Prints the entry for the DnD5e armor.\n\t"+
-						"<Any Creature>\n\t\t"+
-							"-Prints the entry for the DnD5e creature.\n\t"+
-							"-(Except the Crab, who is very, very special.)\n\t"+
-						"weapons\n\t\t"+
-							"-Shows the handbook table for DnD5e weapons.\n\t"+
-						"armors\n\t\t"+
-							"-Shows the handbook table for DnD5e armors."+
-				"```\n"+
-					"Inline commands:\n"+
-				"```\n"+
-					"Kosher Commands:\n\t"+
-						"[[help]]\n\t\t"+
-							"-Shows all available commands & usage.\n\t"+
-						"[[NdN<(kh|kl|k|dh|dl|d)N><(+|-)N>]]\n\t\t"+
-							"-Inline roll command. Ex. [[2d20kh1+9]]\n\t"+
-						"[[NdN(>?|<?|=?)N]]\n\t\t"+
-							"-Inline sum probability command. Ex. [[8d6>?30]]\n\t"+
-						"[[NdNfNsN]]\n\t\t"+
-							"-Inline success/failure probability command. Ex. [[3d10f1s4]]\n\t"+
-						"[[fflogsranks,<character name>,<world>]]\n\t\t"+
-							"-Searches up a FFXIV character's parses for the current raid tier.\n\t"+
-						"[[wolfram,<search>]]\n\t\t"+
-							"-Asks Wolfram Alpha what it thinks about your search.\n\t"+
-						"[[lottery]]\n\t\t"+
-							"-You feeling lucky? Ask Star for details.\n\t"+
-						"[[domtlist]]\n\t\t"+
-							"-Shows all possible cards from the Deck of Many Things.\n\t"+
-						"my shit up | kys\n\t\t"+
-							"-No bully.\n"+
-					"\nNon-Kosher Commands:\n\t"+
-						"[[honk]]\n\t\t"+
-							"-Honk Honk.\n\t"+
-						"[[everyfuckingtime]]\n\t\t"+
-							"-Oh no.\n\t"+
-						"[[domt]]\n\t\t"+
-							"-Draws a random card from the Deck of Many Things.\n\t"+
-						"[[tarotcard]]\n\t\t"+
-							"-Draws a random tarot card.\n\t"+
-						"[[card]]\n\t\t"+
-							"-Draws a random card.\n\t"+
-						"[[rollstats]]\n\t\t"+
-							"-Rolls stats for a new DnD character.\n\t"+
-						"[[8ball]]\n\t\t"+
-							"-Let your deepest, most intimate question be answered.\n\t"+
-						"[[rollchar]]\n\t\t"+
-							"-Rolls stats, race, and class for a new DnD character."+
-						"[[dragsnipe,<base rate>,<number of rolls>(,<pity rate>)]]\n\t\t"+
-							"-Returns the chances you have of sniping a particular unit in Dragalia.\n\t\t"+
-							"  Base rate is in % and is the rate of what you want with no pity rate.\n\t\t"+
-							"  Pity rate is in % and it is the rate at which you want to start.\n\t\t"+
-							"  Ex. [[dragsnipe,0.5,300]] | [[dragsnipe,1,20,5.5]].\n\t\t"+
-				"```\n",
-	},
 	picResponseCache: {
 		"i swear officer": repository+"twenty.png",
 		"do it for him": repository+"morality.jpg",
@@ -106,6 +37,134 @@ module.exports = {
 		"balance": "Your mind suffers a wrenching alteration, causing your alignment to change. Lawful becomes chaotic, good becomes evil, and vice versa. If you are true neutral or unaligned, this card has no effect on you.",
 		"fool": "You lose 10,000 XP, discard this card, and draw from the deck again, counting both draws as one of your declared draws. If losing that much XP would cause you to lose a level, you instead lose an amount that leaves you with just enough XP to keep your level.",
 		"jester": "You gain 10,000 XP, or you can draw two additional cards beyond your declared draws.",
+	},
+	fortuneCache: {
+		0: "Look to La Luna",
+		1: "Don't leave the house today",
+		2: "We will all die one day",
+		3: "You are throwing your life away",
+		4: "Go outside!",
+		5: "Give up!",
+		6: "You will die alone",
+		7: "Ask again later",
+		8: "Wake up",
+		9: "You are worshiping a sun god",
+		10: "Stay asleep",
+		11: "Marry and reproduce",
+		12: "Question authority",
+		13: "Think for yourself",
+		14: "Steven lives",
+		15: "Bring him the photo",
+		16: "Your soul is hidden deep within the darkness",
+		17: "You were born wrong",
+		18: "You are dark inside",
+		19: "You will never be forgiven",
+		20: "When life gives you lemons, reroll!",
+		21: "It is dangerous to go alone",
+		22: "Go to the next room",
+		23: "You will die",
+		24: "Why so blue?",
+		25: "Your princess is in another castle",
+		26: "You make mistakes, it is only natural",
+		27: "A hanged man brings you no luck today",
+		28: "The devil in disguise",
+		29: "Nobody knows the troubles you have seen",
+		30: "Do not look so hurt, others have problems too",
+		31: "Always your head in the clouds",
+		32: "Do not lose your head",
+		33: "Do not cry over spilled tears",
+		34: "Well that was worthless",
+		35: "Sunrays on your little face",
+		36: "Have you seen the exit?",
+		37: "Always look on the bright side",
+		38: "Get a baby pet, it will cheer you up",
+		39: "Meet strangers without prejudice",
+		40: "Only a sinner",
+		41: "See what he sees, do what he does",
+		42: "Lies",
+		43: "Lucky numbers: 16 31 64 70 74",
+		44: "Go directly to jail",
+		45: "Rebirth got cancelled",
+		46: "Follow the cat",
+		47: "You look fat, you should exercise more",
+		48: "Take your medicine",
+		49: "Come to a fork in the road, take it",
+		50: "Believe in yourself",
+		51: "Trust no one",
+		52: "Trust good people",
+		53: "Follow the dog",
+		54: "Follow the zebra",
+		55: "What do you want to do today",
+		56: "Use bombs wisely",
+		57: "Live to die",
+		58: "You are playing it wrong, give me the controller",
+		59: "Choose your own path",
+		60: "Your old life lies in ruin",
+		61: "I feel asleep!!!",
+		62: "May your troubles be many",
+		63: "Blame nobody but yourself",
+		64: "WHO ARE YOU PEOPLE?",
+		65: "Help, I'm trapped in here!",
+		66: "Someone get me out of here!",
+		67: "Return to the grave",
+		68: "The cat will arrive shortly",
+		69: "Please wait",
+		70: "Reply hazy, try another reality",
+		71: "[[8ball]]",
+		72: "You have activated my trap card",
+		73: "God willing",
+		74: "Night falls",
+		75: "Deny everything",
+		76: "Everyone else is wrong",
+		length: 77
+	},
+	cardSuitCache: {
+		0: "Spades",
+		1: "Clubs",
+		2: "Hearts",
+		3: "Diamonds",
+		length: 4
+	},
+	cardNameCache: {
+		0: "Ace",
+		1: "2",
+		2: "3",
+		3: "4",
+		4: "5",
+		5: "6",
+		6: "7",
+		7: "8",
+		8: "9",
+		9: "10",
+		10: "Jack",
+		11: "Queen",
+		12: "King",
+		length: 13
+	},
+	tarotCache: {
+		0: "The Fool",
+		1: "The Magician",
+		2: "The High Priestess",
+		3: "The Empress",
+		4: "The Emperor",
+		5: "The Hierophant",
+		6: "The Lovers",
+		7: "The Chariot",
+		8: "Justice",
+		9: "The Hermit",
+		10: "Wheel of Fortune",
+		11: "Strength",
+		12: "The Hanged Man",
+		13: "Death",
+		14: "Temperance",
+		15: "The Devil",
+		16: "The Tower",
+		17: "The Stars",
+		18: "The Moon",
+		19: "The Sun",
+		20: "Judgment",
+		21: "The World",
+		length: 22
 	},
 	classCache: {
 		0: "Barbarian",

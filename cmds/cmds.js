@@ -1,12 +1,16 @@
 /* Statics */
-var YES = "YES";
-var NO = "NO";
 var NO_RESPONSE = "NO_RESPONSE";
 
 var util = require('../util/util');
 var cache = require('../cache/cache');
 var icon = require("../repo/icon.json");
 var auth = require("../auth/auth.json");
+
+/* Bitwise flags */
+var FLAGS = {NONE: 0, SPAM: 1, PING: 2, EMBD: 4, PICT: 8, PM: 16, SELF: 32}
+
+/* Function input requests */
+var PERMS = {NONE: 0, UID: 1, CHID: 2, MSGID: 4, BOT: 8}
 
 /**
 This requires texlive, texlive-latex-extra, and imagemagick to be installed.
@@ -20,29 +24,50 @@ var fs = require("fs");
 var request = require('request');
 
 module.exports = {
-	/* PM Cache for messages meant to be in DMChannels */
-	pmResponseCache: {
-		"help": {
-			desc: "-Shows all available commands & usage.",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: NO
-			},
-			func: function(_msg) {
-				return cache.helpResponse.content;
-			}
-		}
-	},
 	/* Response Cache as a catch-all for commands in brackets. */
 	functionResponseCache: {
-		"fflogsranks": {
-			desc: "-TODO.",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: YES
+		"help": {
+			usage: "[[help]]",
+			desc: "-Shows all available commands & usage.",
+			permissions: PERMS.UID,
+			flags: FLAGS.SELF | FLAGS.EMBD | FLAGS.PM,
+			func: function(_msg) {
+				if(!this.savedResponse){ this.savedResponse = this.generateHelpResponse(_msg.cmdsArr); }
+				for(var i = 0; i < this.savedResponse.length; i++){ _msg.callback(_msg.userID, this.savedResponse[i]); }
 			},
+			generateHelpResponse: function(_cmds){
+				var messages = []
+				
+				messages.push({
+					color: 9997003,
+					title: 'Exact Commands',
+					fields: [	{name: "do it for him", value: "-Please do it for him."},
+								{name: "i swear officer", value: "-Believe me!"},
+								{name: "<Any Spell>", value: "-Prints the entry for the DnD5e spell."},
+								{name: "<Any Weapon>", value: "-Prints the entry for the DnD5e weapon."},
+								{name: "<Any Armor>", value: "-Prints the entry for the DnD5e armor."},
+								{name: "<Any Creature>", value: "-Prints the entry for the DnD5e creature.\n-(Except the Crab, who is very, very special.)"},
+								{name: "weapons", value: "-Shows the handbook table for DnD5e weapons."},
+								{name: "armors", value: "-Shows the handbook table for DnD5e armors."}]
+				});
+				
+				var res = {
+					color: 9997003,
+					title: 'Inline Commands',
+					fields: []
+				}
+				
+				for(var cmd in _cmds){ res.fields.push({name: _cmds[cmd].usage, value: _cmds[cmd].desc}); }
+				messages.push(res);
+				return messages;
+			},
+			savedResponse: null
+		},
+		"fflogsranks": {
+			usage: "[[fflogsranks,<character name>,<world>]]",
+			desc: "-Searches up a FFXIV character's parses for the current raid tier.",
+			permissions: PERMS.CHID,
+			flags: FLAGS.EMBD,
 			func: function(_msg) {
 				console.log("1: "+_msg.cmds + "0: " + _msg.cmds[0]);
 				console.log(this.constructRequestURL(_msg.cmds[1], _msg.cmds[2], "na"));
@@ -95,12 +120,10 @@ module.exports = {
 			}
 		},
 		"wolfram": {
-			desc: "-TODO.",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: YES
-			},
+			usage: "[[wolfram,<wolfram alpha query>]]",
+			desc: "-You wanna search wolfram, but too lazy to open your browser?",
+			permissions: PERMS.CHID,
+			flags: FLAGS.EMBD,
 			func: function(_msg) {
 				console.log("1: " + _msg.cmds + "0: " + _msg.cmds[0]);
 				console.log(this.constructRequestURL(_msg.cmds[1]));
@@ -122,7 +145,6 @@ module.exports = {
 			input: '&input=',
 			request,
 			temp: '&podtitle=Input%20interpretation&podtitle=Result',
-			//wolframBase: 'http://api.wolframalpha.com/v1/simple',
 			wolframBase: 'http://api.wolframalpha.com/v2/query',
 			wolframLink: 'https://www.wolframalpha.com/input/?i=',
 			constructRequestURL: function(request){
@@ -144,9 +166,7 @@ module.exports = {
 					timestamp: new Date()
 				}
 				
-				//console.log(res);
 				var pod, pods = message.queryresult.pods;
-				//console.log(pods);
 				
 				for(var i = 0; i < pods.length; i++){
 					pod = pods[i];
@@ -158,43 +178,35 @@ module.exports = {
 					});
 				}
 				
-				/*
-				console.log(message.imageFile);
-				var res = {
-					color: 9997003,
-					title: decodeURI(this.request),
-					url: this.wolframLink + this.request,
-					fields: [],
-					image: {
-						url: 'data:image/gif;base64,' + new Buffer(message.imageFile).toString('base64')
-					},
-					timestamp: new Date()
-				}
-				
-				console.log(res.image.url);
-				*/
 				return res;
 			}
 		},
 		"dragsnipe": {
-			desc: "-Returns the chances you have of sniping a particular unit in Dragalia.",
-			properties: {
-				spam: NO,
-				pingsUser: YES,
-				embed: NO
-			},
+			usage: "[[dragsnipe,<target rate>,<number of rolls>(,<starting rate>,<current rate>)]]",
+			desc: "-Returns the chances you have of sniping a particular unit in Dragalia.\n" +
+					"--Target rate is in % and is the rate of what you want with no pity rate.\n" +
+					"--Starting rate is in % and it is the rate before any pity.\n" +
+					"--Current rate is in % and it is the pity rate at which you want to start.\n" +
+					"--If starting rate is omitted, it defaults to 4%.\n" +
+					"--If current rate is omitted, it defaults to the starting rate.\n" +
+					"--Ex. [[dragsnipe,0.5,300]] | [[dragsnipe,0.5,450,6,7.5]].",
+			permissions: PERMS.NONE,
+			flags: FLAGS.PING,
 			func: function(_msg) {
-				if(	!/^(?:(?:\d(?:\.\d+)?)|(?:\d?(?:\.\d+)))$/.test(_msg.cmds[1]) || _msg.cmds[1] <= 0 || _msg.cmds[1] > 4 || !/^\d+$/.test(_msg.cmds[2]) || _msg.cmds[3] && !/^\d(?:\.(?:5|0))?$/.test(_msg.cmds[3])){
-					return "Improper usage, please check the manual. \"[[help]]\"";
+				if(	!/^(?:(?:\d(?:\.\d+)?)|(?:\d?(?:\.\d+)))$/.test(_msg.cmds[1]) || _msg.cmds[1] <= 0 || _msg.cmds[1] > 4 && (!_msg.cmds[3] || _msd.cmds[1] > _msg.cmds[3]) || !/^\d+$/.test(_msg.cmds[2]) || _msg.cmds[3] && (!/^\d(?:\.(?:5|0))?$/.test(_msg.cmds[3]) || _msg.cmds[3] > 9) || _msg.cmds[4] && (!/^\d(?:\.(?:5|0))?$/.test(_msg.cmds[4]) || _msg.cmds[4] < _msg.cmds[3] || _msg.cmds[4] > 9)){
+					return "Improper usage, please check the manual or make sure that your inputs are possible. \"[[help]]\"";
 				}
 				if(_msg.cmds[2] > 50000){ return "Show me a wallet that big and I'll show you a prolapsed anus."; }
 				
-				return "```With a base rate of " + _msg.cmds[1] + "% and " + _msg.cmds[2] + " rolls costing " + _msg.cmds[2] * 150 + " wyrmite and a starting pity rate of " + (_msg.cmds[3] ? _msg.cmds[3] : 4) + "%\nYou have a " + this.atLeastOneSuccess(_msg.cmds[3] ? (_msg.cmds[3] - 4) / 0.5 : 0, _msg.cmds[1] / 100, _msg.cmds[2]) * 100 + "% chance of sniping that particular unit.```";
+				return "```With a target rate of " + _msg.cmds[1] + "% and " + _msg.cmds[2] + " rolls costing " + _msg.cmds[2] * 150 + " wyrmite and a starting rate of " + (_msg.cmds[3] ? _msg.cmds[3] : 4) + " and a current rate of " + (_msg.cmds[4] ? _msg.cmds[4] : (_msg.cmds[3] ? _msg.cmds[3] : 4)) + "%\nYou have a " + this.atLeastOneSuccess(_msg.cmds[1] / 100, _msg.cmds[2], (_msg.cmds[3] ? _msg.cmds[3] : 4) / 100, (_msg.cmds[4] ? _msg.cmds[4] : (_msg.cmds[3] ? _msg.cmds[3] : 4)) / 100) * 100 + "% chance of sniping that particular unit.```";
 			},
 			probHash: [],
 			aLOHash: [],
 			binHash: [],
 			rHash: [],
+			fullRate: 0.04,
+			pityStep: 0.005,
+			pityCap: 0.09,
 			getKey: function(arr){ return arr.join("|") },
 			binomial: function(n, r){
 				var key = this.getKey([n, r]), res = 1, r = n - r > r ? r : n - r;
@@ -208,35 +220,42 @@ module.exports = {
 				for(var i = 0; i < s; i++){ res -= this.binomial(r, i) * Math.pow(1 - p, r - i) * Math.pow(p, i); }
 				return this.probHash[key] = res;
 			},
-				atLeastOneSuccess: function(pity, baseP, r){
+			getPity: function(realRate, fullRate){
+				if(realRate < fullRate){ return -1; }
+				if(realRate > this.pityCap){ realRate = this.pityCap }
+			
+				return Math.round((realRate - fullRate) / this.pityStep);
+			},
+			atLeastOneSuccess: function(baseP, r, fullRate, realRate){
+				var pity = this.getPity(realRate, fullRate);
+				for(var i = 10000 + (r % 10); i < r; i += 10000){ this.aLOS(pity, baseP, i, fullRate); }
+				return this.aLOS(pity, baseP, r, fullRate);
+			},
+			aLOS: function(pity, baseP, r, fullRate){
 				if(r == 0){ return 0; }
+				fullRate = fullRate ? fullRate : this.fullRate;
 				if(pity == 0 && r < 10){ return this.constructProb(baseP, r, 1) }
-				var key = this.getKey([pity, baseP, r]), rKey = this.getKey([pity, baseP, r < 10]), res = 0, rate = ((pity * 0.005) + 0.04) / 0.04, probOne, probOneBad;
+				var key = this.getKey([pity, baseP, r, fullRate]), rKey = this.getKey([pity, baseP, r < 10, fullRate]), rate = ((pity * this.pityStep) + fullRate) / fullRate, probOne, probOneBad, isPityCap = this.pityCap > this.pityStep * pity + fullRate;
 				if(this.aLOHash[key]){ return this.aLOHash[key]; }
 
 				//oops.
-				probOne = this.rHash[rKey] ? this.rHash[rKey][0] : (pity > 9 ? (baseP / 0.04) : 0) + (pity > 9 ? (1 - (baseP / 0.04)) : 1) * this.constructProb(baseP * rate, (pity > 9 ? 9 : (r < 10 ? 1 : 10)), 1);
-				probOneBad = this.rHash[rKey] ? this.rHash[rKey][1] : (this.constructProb(0.04 * rate, (r < 10 ? 1 : 10), 1) - probOne) / (1 - probOne);
+				probOne = this.rHash[rKey] ? this.rHash[rKey][0] : (!isPityCap ? (baseP / fullRate) : 0) + (!isPityCap ? (1 - (baseP / fullRate)) : 1) * this.constructProb(baseP * rate, (!isPityCap ? 9 : (r < 10 ? 1 : 10)), 1);
+				probOneBad = this.rHash[rKey] ? this.rHash[rKey][1] : (this.constructProb(fullRate * rate, (r < 10 ? 1 : 10), 1) - probOne) / (1 - probOne);
 				this.rHash[rKey] = [probOne, probOneBad];
-				res += probOne + (1 - probOne) * (pity > 9 ? this.atLeastOneSuccess(0, baseP, r - (r < 10 ? 1 : 10)) : ((1 - probOneBad) * this.atLeastOneSuccess(pity + (r < 10 ? 0 : 1), baseP, r - (r < 10 ? 1 : 10)) + probOneBad * this.atLeastOneSuccess(0, baseP, r - (r < 10 ? 1 : 10))));
 
-				return this.aLOHash[key] = res;
+				return this.aLOHash[key] = probOne + (1 - probOne) * (!isPityCap ? this.aLOS(0, baseP, r - (r < 10 ? 1 : 10), fullRate) : ((1 - probOneBad) * this.aLOS(pity + (r < 10 ? 0 : 1), baseP, r - (r < 10 ? 1 : 10), fullRate) + probOneBad * this.aLOS(0, baseP, r - (r < 10 ? 1 : 10), fullRate)));;
 			}
 		},
 		"latex": {
-			desc: "-Latex formatting",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: NO
-			},
+			usage: "[[latex,<mathematical expression in latex syntax>]]",
+			desc: "-Latex formatted text at your command!",
+			permissions: PERMS.CHID | PERMS.BOT,
+			flags: FLAGS.NONE,
 			func: function(_msg) {
 				try{
 					var rnd = Math.round(Math.random() * 1000000);
 					var tmp = fs.createWriteStream(rnd + '.jpg');
-					var reconstruct = _msg.cmds[1];
-					for(var i = 2; i < _msg.cmds.length; i++){reconstruct += ',' + _msg.cmds[i]}
-					var stream = mathmode(reconstruct).pipe(tmp);
+					var stream = mathmode(_msg.cmds[1]).pipe(tmp);
 					stream.on('finish', function(){
 						_msg.bot.uploadFile({
 							to: _msg.channelID,
@@ -249,14 +268,12 @@ module.exports = {
 			}
 		},
 		"honk": {
+			usage: "[[honk]]",
 			desc: "-Honk Honk.",
-			properties: {
-				spam: YES,
-				pingsUser: NO,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.SPAM,
 			func: function(_msg) {
-				return 	".\n"+
+				return 	"```\n"+
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢰⣶⣶⢀⣴⣄\n"+
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢸⣿⣿⣿⠟⠋\n"+
 						"⢀⢀⢀⢀⢀⣀⡀⢀⢀⢀⢀⢀⣠⣤⣴⣿⣧⢸⣿⣿⣷⣄⡀\n"+
@@ -277,16 +294,14 @@ module.exports = {
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢿⣿⣆⣿⣿⡄⣿⣯⣿⠻⠿⠋⠁⠈⠁⢀⢀⢀⢀⠈⣑⣺⠍⠑⠂⢀⢀⠳⣌⣉⣁⡞⢀⢀⡟⠽⠛⠛⠒⠿⢦⣤⢤⢼⣻⢿⠿⠇⢸⢀⢠⣿⢧⣿⠃\n"+
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⠘⣿⣿⠛⣿⣧⠈⠉⠁⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⣸⢀⢀⣸⠃⢀⢀⢀⢀⢀⢀⠉⠛⠳⠶⠥⢤⠐⠋⣠⣿⣿⣿⠋\n"+
 						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢹⣿⠆⠘⠉⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢴⠇⢀⢀⠏⢀⠲⠒⠖⠢⠰⠤⠦⢦⠥⠈⠄⠘⢦⡚⠻⡿⠟⠁\n"+
-						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⠁⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⡼⡾⢀⢀⣼⠓⠢⠦⠤⠤⠠⢀⠰⠊⠁⠊⢀⠡⠾⠋⢀⢀⠇";
+						"⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⠁⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⡼⡾⢀⢀⣼⠓⠢⠦⠤⠤⠠⢀⠰⠊⠁⠊⢀⠡⠾⠋⢀⢀⠇\n```";
 			}
 		},
 		"everyfuckingtime": {
+			usage: "[[everyfuckingtime]]",
 			desc: "-Oh no.",
-			properties: {
-				spam: YES,
-				pingsUser: NO,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.SPAM,
 			func: function(_msg) {
 				return 	"```\n"+
 						"                E V E R Y F U C K I N G T I M E\n"+
@@ -316,244 +331,98 @@ module.exports = {
 			}
 		},
 		"domt": {
+			usage: "[[domt]]",
 			desc: "-Draws a random card from the Deck of Many Things.",
-			properties: {
-				spam: YES,
-				pingsUser: YES,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.SPAM | FLAGS.PING,
 			func: function(_msg) {
 				card = Math.floor(Math.random() * 22);
 				return "You drew " + util.getDNDCardName(card) + "." + "\n" + cache.domtCache[util.getDNDCardName(card).toLowerCase()];
 			}
 		},
 		"domtlist": {
+			usage: "[[domtlist]]",
 			desc: "-Shows all possible cards from the Deck of Many Things.",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.NONE,
 			func: function(_msg) {
 				return "Vizier, Sun, Moon, Star, Comet, The Fates, Throne, Key, Knight, Gem, Talons, The Void, Flames, Skull, Idiot, Donjon, Ruin, Euryale, Rogue, Balance, Fool, Jester";
 			}
 		},
 		"tarotcard": {
+			usage: "[[tarotcard]]",
 			desc: "-Draws a random tarot card.",
-			properties: {
-				spam: YES,
-				pingsUser: YES,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.SPAM | FLAGS.PING,
 			func: function(_msg) {
 				return "You drew " + this.getTarotCardName(Math.floor(Math.random() * 22)) + ".";
 			},
-			tarotCache: {
-				0: "The Fool",
-				1: "The Magician",
-				2: "The High Priestess",
-				3: "The Empress",
-				4: "The Emperor",
-				5: "The Hierophant",
-				6: "The Lovers",
-				7: "The Chariot",
-				8: "Justice",
-				9: "The Hermit",
-				10: "Wheel of Fortune",
-				11: "Strength",
-				12: "The Hanged Man",
-				13: "Death",
-				14: "Temperance",
-				15: "The Devil",
-				16: "The Tower",
-				17: "The Stars",
-				18: "The Moon",
-				19: "The Sun",
-				20: "Judgment",
-				21: "The World",
-				length: 22
-			},
 			getTarotCardName: function(card){
-				return this.tarotCache[card % this.tarotCache.length];
+				return cache.tarotCache[card % cache.tarotCache.length];
 			}
 		},
 		"card": {
+			usage: "[[card]]",
 			desc: "-Draws a random card.",
-			properties: {
-				spam: YES,
-				pingsUser: YES,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.SPAM | FLAGS.PING,
 			func: function(_msg) {
 				card = Math.floor(Math.random() * this.deckSize);
 				return "You drew a " + this.getCardName(card) + " of " + this.getCardSuit(card) + ".";
 			},
 			deckSize: 52,
-			cardSuitCache : {
-				0: "Spades",
-				1: "Clubs",
-				2: "Hearts",
-				3: "Diamonds",
-				length: 4
-			},
-			cardNameCache : {
-				0: "Ace",
-				1: "2",
-				2: "3",
-				3: "4",
-				4: "5",
-				5: "6",
-				6: "7",
-				7: "8",
-				8: "9",
-				9: "10",
-				10: "Jack",
-				11: "Queen",
-				12: "King",
-				length: 13
-			},
 			getCardName : function(card){
-				return this.cardNameCache[card % this.cardNameCache.length];
+				return cache.cardNameCache[card % cache.cardNameCache.length];
 			},
 			getCardSuit : function(card){
-				return this.cardSuitCache[card % this.cardSuitCache.length];
+				return cache.cardSuitCache[card % cache.cardSuitCache.length];
 			}
 		},
 		"rollstats": {
+			usage: "[[rollstats]]",
 			desc: "-Rolls stats for a new DnD character.",
-			properties: {
-				spam: YES,
-				pingsUser: YES,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.SPAM | FLAGS.PING,
 			func: function(_msg) {
 				return util.rollStats("[[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]]")
 			}
 		},
 		"rollchar": {
+			usage: "[[rollchar]]",
 			desc: "-Rolls stats, race, and class for a new DnD character.",
-			properties: {
-				spam: YES,
-				pingsUser: YES,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.SPAM | FLAGS.PING,
 			func: function(_msg) {
 				return util.getClassName(Math.floor(Math.random() * cache.classCache.length)) + " & " + util.getRaceName(Math.floor(Math.random() * cache.raceCache.length))+util.rollStats("[[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]][[4d6kh3]]")
 			}
 		},
 		"8ball": {
-			desc: "-Let your deepest, most intimate question be answered.",
-			properties: {
-				spam: YES,
-				pingsUser: YES,
-				embed: NO
-			},
+			usage: "[[8ball]]",
+			desc: "-Let your deepest, most intimate questions be answered.",
+			permissions: PERMS.NONE,
+			flags: FLAGS.SPAM | FLAGS.PING,
 			func: function(_msg) {
-				return this.fortuneCache[Math.floor(Math.random() * this.fortuneCache.length)];
-			},
-			fortuneCache : {
-				0: "Look to La Luna",
-				1: "Don't leave the house today",
-				2: "We will all die one day",
-				3: "You are throwing your life away",
-				4: "Go outside!",
-				5: "Give up!",
-				6: "You will die alone",
-				7: "Ask again later",
-				8: "Wake up",
-				9: "You are worshiping a sun god",
-				10: "Stay asleep",
-				11: "Marry and reproduce",
-				12: "Question authority",
-				13: "Think for yourself",
-				14: "Steven lives",
-				15: "Bring him the photo",
-				16: "Your soul is hidden deep within the darkness",
-				17: "You were born wrong",
-				18: "You are dark inside",
-				19: "You will never be forgiven",
-				20: "When life gives you lemons, reroll!",
-				21: "It is dangerous to go alone",
-				22: "Go to the next room",
-				23: "You will die",
-				24: "Why so blue?",
-				25: "Your princess is in another castle",
-				26: "You make mistakes, it is only natural",
-				27: "A hanged man brings you no luck today",
-				28: "The devil in disguise",
-				29: "Nobody knows the troubles you have seen",
-				30: "Do not look so hurt, others have problems too",
-				31: "Always your head in the clouds",
-				32: "Do not lose your head",
-				33: "Do not cry over spilled tears",
-				34: "Well that was worthless",
-				35: "Sunrays on your little face",
-				36: "Have you seen the exit?",
-				37: "Always look on the bright side",
-				38: "Get a baby pet, it will cheer you up",
-				39: "Meet strangers without prejudice",
-				40: "Only a sinner",
-				41: "See what he sees, do what he does",
-				42: "Lies",
-				43: "Lucky numbers: 16 31 64 70 74",
-				44: "Go directly to jail",
-				45: "Rebirth got cancelled",
-				46: "Follow the cat",
-				47: "You look fat, you should exercise more",
-				48: "Take your medicine",
-				49: "Come to a fork in the road, take it",
-				50: "Believe in yourself",
-				51: "Trust no one",
-				52: "Trust good people",
-				53: "Follow the dog",
-				54: "Follow the zebra",
-				55: "What do you want to do today",
-				56: "Use bombs wisely",
-				57: "Live to die",
-				58: "You are playing it wrong, give me the controller",
-				59: "Choose your own path",
-				60: "Your old life lies in ruin",
-				61: "I feel asleep!!!",
-				62: "May your troubles be many",
-				63: "Blame nobody but yourself",
-				64: "WHO ARE YOU PEOPLE?",
-				65: "Help, I'm trapped in here!",
-				66: "Someone get me out of here!",
-				67: "Return to the grave",
-				68: "The cat will arrive shortly",
-				69: "Please wait",
-				70: "Reply hazy, try another reality",
-				71: "[[8ball]]",
-				72: "You have activated my trap card",
-				73: "God willing",
-				74: "Night falls",
-				75: "Deny everything",
-				76: "Everyone else is wrong",
-				length: 77
+				return cache.fortuneCache[Math.floor(Math.random() * cache.fortuneCache.length)];
 			}
 		},
 		"playing": {
-			desc: "-Sets the game the bot is currently playing, if you have permission.",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: NO
-			},
+			usage: "[[playing,<game>]]",
+			desc: "-Sets the game the bot is currently playing, if your name starts with Arch and ends with aic (and the bot likes you).",
+			permissions: PERMS.UID | PERMS.BOT,
+			flags: FLAGS.NONE,
 			func: function(_msg) {
 				if(_msg.userID == 157212139344494592){
-					_msg.bot.setPresence({game : {name : _msg.message.split("[[playing]] ")[1]}});
+					_msg.bot.setPresence({game : {name : _msg.cmds[1]}});
 				}
 				
 				return NO_RESPONSE;
 			}
 		},
 		"avatar": {
+			usage: "[[avatar,<icon name>]]",
 			desc: "-Sets the icon of the bot, if you have permission.",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: NO
-			},
+			permissions: PERMS.UID | PERMS.BOT,
+			flags: FLAGS.NONE,
 			func: function(_msg) {
 				if(_msg.userID == 157212139344494592){
 					if(_msg.message == "[[avatar]] bird"){
@@ -571,12 +440,10 @@ module.exports = {
 			}
 		},
 		"react": {
+			usage: "[[react,<probability>]]",
 			desc: "-Sets the reaction chance.",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: NO
-			},
+			permissions: PERMS.CHID | PERMS.UID | PERMS.MSGID | PERMS.BOT,
+			flags: FLAGS.NONE,
 			func: function(_msg) {
 				if(_msg.userID == 157212139344494592){
 					if(/^(?:(?:\d(?:\.\d+)?)|(?:\d?(?:\.\d+)))$/.test(_msg.cmds[1]) && _msg.cmds[1] >= 0 && _msg.cmds[1] <= 1){
@@ -592,37 +459,31 @@ module.exports = {
 			}
 		},
 		"lottery": {
+			usage: "[[lottery]]",
 			desc: "-You feeling lucky? Ask Star for details.",
-			properties: {
-				spam: NO,
-				pingsUser: YES,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.PING,
 			func: function(_msg) {
 				return util.handleRoll("[[2d1000]]")
 			}
 		},
 		"info":{
+			usage: "[[info]]",
 			desc: "-Bot information.",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.NONE,
 			func: function(_msg){
 				return this.infoResponse.content;
 			},
 			infoResponse: {
-				content: "```\nr9k-ic bot by Archaic.\nLast Updated: 12-09-2018\nver. 1.30\n```"
+				content: "```\nr9k-ic bot by Archaic.\nLast Updated: 03-28-2019\nver. 1.40\n```"
 			}
 		},
 		"changelog":{
+			usage: "[[changelog]]",
 			desc: "-Bot changelog.",
-			properties: {
-				spam: NO,
-				pingsUser: NO,
-				embed: NO
-			},
+			permissions: PERMS.NONE,
+			flags: FLAGS.NONE,
 			func: function(_msg){
 				return this.changelogResponse.content;
 			},
@@ -633,6 +494,8 @@ module.exports = {
 							"\nver. 1.10:\t09-06-2018\n\tRemove legacy commands & refactor.\n" +
 							"\nver. 1.20:\t09-14-2018\n\tAdded FFlogs rankings pulls.\n" +
 							"\nver. 1.30:\t12-09-2018\n\tAdded Wolfram Alpha support & dragsnipe.\n" +
+							"\nver. 1.35:\t02-09-2019\n\tAdded latex & initial refactor.\n" +
+							"\nver. 1.40:\t03-28-2019\n\tComplete overhaul of functions & parameters. Help function update. Dragsnipe update.\n" +
 							"```"
 			}
 		}
@@ -659,7 +522,7 @@ module.exports = {
 				i++;
 			});
 		}
-console.log(res);
+		
 		return res;
 	},
 	getArmorString: function(info){
@@ -676,7 +539,7 @@ console.log(res);
 	getWeaponString: function(info){
 		
 		var res = 	"```\n" +
-			info.name + " - Weapon: " + (info.simple == YES ? "Simple," : "Martial,") + " " + (info.ranged == YES ? "Ranged" : "Melee") +
+			info.name + " - Weapon: " + (info.simple == "YES" ? "Simple," : "Martial,") + " " + (info.ranged == "YES" ? "Ranged" : "Melee") +
 			(info.cost   ? "\n\tCost  : " + info.cost + "gp" : "") +
 			(info.damage ? "\n\tDamage: " + info.damage + " " + info.damage_type : "") +
 			(info.weight ? "\n\tWeight: " + info.weight + "lb." : "");
@@ -719,7 +582,7 @@ console.log(res);
 			(info.resist	?"\nResists   : " + info.resist : "") +
 			(info.vulnerable?"\nVuln.     : " + info.vulnerable : "") +
 			(info.immune	?"\nImmunities: " + info.immune : "") +
-	(info.conditionImmune	?"\nCond. Imm.: " + info.conditionImmune : "") +
+			(info.conditionImmune	?"\nCond. Imm.: " + info.conditionImmune : "") +
 			(info.senses	?"\nSenses    : " + info.senses + " | ": "\n") +
 			(info.passive	?"Passive Perception : " + info.passive : "") +
 			(info.languages	?"\nLanguages : " + info.languages : "") +

@@ -5,7 +5,6 @@ var util = require('./util/util');
 var commands = require('./cmds/cmds');
 var cache = require('./cache/cache');
 
-// Get auth data for login.
 try {
 	var auth = require("./auth/auth.json");
 } catch (e){
@@ -13,7 +12,6 @@ try {
 	process.exit();
 }
 
-// Get DnD data.
 // Thanks, https://www.reddit.com/r/DnD/comments/33i1hd/5e_spell_reference_mobile_app/cqocaf8/ for the spells list.
 // Thanks, https://github.com/Buluphont/Spellbot for the monster list.
 try {
@@ -34,35 +32,28 @@ var bot = new Discord.Client({
 });
 
 /* Statics */
-var YES = "YES";
-var NO = "NO";
 var NO_RESPONSE = "NO_RESPONSE";
+
+/* Bitwise flags */
+var FLAGS = {NONE: 0, SPAM: 1, PING: 2, EMBD: 4, PICT: 8, PM: 16, SELF: 32}
+
+/* Function input requests */
+var PERMS = {NONE: 0, UID: 1, CHID: 2, MSGID: 4, BOT: 8}
 
 var picResponseCache = cache.picResponseCache;
 
 /*Event area*/
-bot.on("ready", function(event) {
+bot.on("ready", function(event){
 	console.log("Connected!");
 	console.log("Logged in as: ");
 	console.log(bot.username + " - (" + bot.id + ")");
 });
 
-bot.on("messageUpdate", function(event) {
-	//console.log(event);
-	//console.log("caught edit!");
-});
-
-bot.on("message", function(user, userID, channelID, message, event) {
+bot.on("message", function(user, userID, channelID, message, event){
 	if(event.d.author.bot){return;}
 	util.reactAtRandom({channelID: channelID, messageID: event.d.id, reaction: ":mysmm:539339078387367937", bot: bot});
 	var msg = message.toLowerCase(), re = /(?:\[\[(.*?)\]\])/gmi, re2 = /(?:([^\n\r,]+))/gmi, cmds = [], temp1, temp2;
-	/*
-	console.log("\n==== New Message ====");
-	console.log(user + " - " + userID);
-	console.log("in " + channelID);
-	console.log(message);
-	console.log("----------");
-	*/
+
 	//Exclusive section.
 	if(picResponseCache[msg]) {
 		sendFiles(channelID, [picResponseCache[msg]]);
@@ -97,19 +88,12 @@ bot.on("message", function(user, userID, channelID, message, event) {
 		while((temp2 = re2.exec(temp1[1])) != null){ cmds.push(temp2[1]); }
 		
 		var funcComm = commands.functionResponseCache[cmds[0].toLowerCase()];
-		var pmComm = commands.pmResponseCache[cmds[0].toLowerCase()];
 		if(funcComm){
-			if(funcComm.properties.spam == NO || !util.isNoSpamChannel(channelID)){
-				if(funcComm.properties.embed == NO){
-					var response = ((funcComm.properties.pingsUser == YES) ? util.pingUser(userID) : "") + funcComm.func({user: user, userID: userID, channelID: channelID, message: message, messageID: event.d.id, cmds: cmds, bot: bot});
-					
-					if(response != NO_RESPONSE){ sendMessages(channelID, [response]); }
-				} else {
-					funcComm.func({user: user, userID: userID, channelID: channelID, message: message,  cmds: cmds, bot: bot, callback: sendEmbed});
-				}
+			if(!(funcComm.flags & FLAGS.SPAM) || !util.isNoSpamChannel(channelID)){
+				var param = { cmds: cmds, userID: PERMS.UID & funcComm.permissions ? userID : null, channelID: PERMS.CHID & funcComm.permissions ? channelID : null, messageID: PERMS.MSGID & funcComm.permissions ? event.d.id : null, bot: PERMS.BOT & funcComm.permissions ? bot : null, callback: funcComm.flags & FLAGS.EMBD ? sendEmbed : null, cmdsArr : funcComm.flags & FLAGS.SELF ? commands.functionResponseCache : null }	
+				var response = ((funcComm.flags & FLAGS.PING) ? util.pingUser(userID) : "") + funcComm.func(param);
+				if(!(funcComm.flags & FLAGS.EMBD) && response != NO_RESPONSE){ sendMessages((funcComm.flags & FLAGS.PM) ? userID : channelID, [response]); }
 			} else { console.log("Spam command: \"" + cmds[0] + "\" blocked in channel - " + channelID); }
-		} else if(pmComm){
-			sendMessages(userID, [pmComm.func({user: user, userID: userID, channelID: channelID, message: message})]);
 		}
 	}
 	
@@ -122,15 +106,11 @@ bot.on("message", function(user, userID, channelID, message, event) {
 	}
 });
 
-bot.on("presence", function(user, userID, status, game, event) {
-	//console.log(user + " is now: " + status);
-});
+bot.on("messageUpdate", function(event){});
+bot.on("presence", function(user, userID, status, game, event){});
+bot.on("any", function(event){});
 
-bot.on("any", function(event) {
-	/*console.log(rawEvent)*/ //Logs every event
-});
-
-bot.on("disconnect", function() {
+bot.on("disconnect", function(){
 	console.log("Bot disconnected");
 	bot.connect() //Auto reconnect
 });
