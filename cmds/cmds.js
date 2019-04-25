@@ -441,7 +441,7 @@ module.exports = {
 		},
 		"react": {
 			usage: "[[react,<probability>]]",
-			desc: "-Sets the reaction chance.",
+			desc: "-Sets the reaction chance, if you have permission.",
 			permissions: PERMS.CHID | PERMS.UID | PERMS.MSGID | PERMS.BOT,
 			flags: FLAGS.NONE,
 			func: function(_msg) {

@@ -55,9 +55,7 @@ bot.on("message", function(user, userID, channelID, message, event){
 	var msg = message.toLowerCase(), re = /(?:\[\[(.*?)\]\])/gmi, re2 = /(?:([^\n\r,]+))/gmi, cmds = [], temp1, temp2;
 
 	//Exclusive section.
-	if(picResponseCache[msg]) {
-		sendFiles(channelID, [picResponseCache[msg]]);
-	}
+	if(picResponseCache[msg]){ sendFiles(channelID, [picResponseCache[msg]]); }
 	
 	if(dndWeaponHash[msg]){
 		sendMessages(channelID, [commands.getWeaponString(dndWeaponCache[dndWeaponHash[msg]])]); return;
@@ -70,17 +68,9 @@ bot.on("message", function(user, userID, channelID, message, event){
 	}
 	
 	//Nonexclusive section.
-	if (message.includes("my shit up") || message.includes("kys") || message.includes(bot.id)){
-		sendMessages(channelID, ["<:fms:249379205840633857>"]);
-	}
-
-	if (message.includes("please clap")){
-		sendMessages(channelID, ["👏"])
-	}
-
-	if (message.includes("please laugh")){
-		sendMessages(channelID, ["😂"])
-	}
+	if (message.includes("my shit up") || message.includes("kys") || message.includes(bot.id)){ sendMessages(channelID, ["<:fms:249379205840633857>"]); }
+	if (message.includes("please clap")){ sendMessages(channelID, ["👏"]); }
+	if (message.includes("please laugh")){ sendMessages(channelID, ["😂"]); }
 	
 	while((temp1 = re.exec(message)) != null){
 		console.log("\n==== New Message ====\n" + user + " - " + userID + "\nin " + channelID + "\n" + message + "\n----------\n" + temp1[1]);
@@ -90,7 +80,13 @@ bot.on("message", function(user, userID, channelID, message, event){
 		var funcComm = commands.functionResponseCache[cmds[0].toLowerCase()];
 		if(funcComm){
 			if(!(funcComm.flags & FLAGS.SPAM) || !util.isNoSpamChannel(channelID)){
-				var param = { cmds: cmds, userID: PERMS.UID & funcComm.permissions ? userID : null, channelID: PERMS.CHID & funcComm.permissions ? channelID : null, messageID: PERMS.MSGID & funcComm.permissions ? event.d.id : null, bot: PERMS.BOT & funcComm.permissions ? bot : null, callback: funcComm.flags & FLAGS.EMBD ? sendEmbed : null, cmdsArr : funcComm.flags & FLAGS.SELF ? commands.functionResponseCache : null }	
+				var param = { 	cmds: cmds,
+								userID:		PERMS.UID	& funcComm.permissions	? userID	: null,
+								channelID:	PERMS.CHID	& funcComm.permissions	? channelID	: null,
+								messageID:	PERMS.MSGID	& funcComm.permissions	? event.d.id: null,
+								bot:		PERMS.BOT	& funcComm.permissions	? bot		: null,
+								callback:	FLAGS.EMBD	& funcComm.flags		? sendEmbed	: null,
+								cmdsArr:	FLAGS.SELF	& funcComm.flags		? commands.functionResponseCache : null }	
 				var response = ((funcComm.flags & FLAGS.PING) ? util.pingUser(userID) : "") + funcComm.func(param);
 				if(!(funcComm.flags & FLAGS.EMBD) && response != NO_RESPONSE){ sendMessages((funcComm.flags & FLAGS.PM) ? userID : channelID, [response]); }
 			} else { console.log("Spam command: \"" + cmds[0] + "\" blocked in channel - " + channelID); }
@@ -112,7 +108,7 @@ bot.on("any", function(event){});
 
 bot.on("disconnect", function(){
 	console.log("Bot disconnected");
-	bot.connect() //Auto reconnect
+	bot.connect();
 });
 
 /*Function declaration area*/
